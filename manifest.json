@@ -3,15 +3,26 @@
   "name": "__MSG_extName__",
   "short_name": "AI Router",
   "description": "__MSG_extDescription__",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "default_locale": "fr",
   "minimum_chrome_version": "116",
-
   "background": {
     "service_worker": "src/background/service-worker.js",
     "type": "module"
   },
-
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*"
+      ],
+      "js": [
+        "src/content/loader.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_title": "__MSG_extName__",
     "default_popup": "src/popup/popup.html",
@@ -22,21 +33,38 @@
       "128": "src/assets/icons/icon-128.png"
     }
   },
-
   "options_page": "src/options/options.html",
-
   "icons": {
     "16": "src/assets/icons/icon-16.png",
     "32": "src/assets/icons/icon-32.png",
     "48": "src/assets/icons/icon-48.png",
     "128": "src/assets/icons/icon-128.png"
   },
-
-  "permissions": ["storage"],
-
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content/*",
+        "src/providers/*",
+        "src/services/*",
+        "src/shared/*",
+        "src/utils/*",
+        "src/ui-kit/*",
+        "src/workflows/*"
+      ],
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*",
+        "https://claude.ai/*"
+      ]
+    }
   ]
 }

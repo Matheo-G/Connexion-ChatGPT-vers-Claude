@@ -19,11 +19,24 @@
         <button class="icon-button" id="open-options" type="button" data-icon="settings" aria-label="Réglages"></button>
       </header>
 
-      <section class="card">
-        <p class="status">
-          <span class="status__dot" aria-hidden="true"></span>
-          <span data-i18n="statusFoundationsReady">Fondations installées.</span>
-        </p>
+      <section class="section">
+        <h2 class="section__title" data-i18n="popupConnections">Connexions</h2>
+        <ul class="card provider-list" id="provider-list" aria-live="polite"></ul>
+      </section>
+
+      <section class="section">
+        <h2 class="section__title" data-i18n="popupDiagnostics">Diagnostic</h2>
+        <div class="actions">
+          <button class="button button--primary" id="test-target" type="button">
+            <span class="button__icon" data-icon="refresh"></span>
+            <span class="button__label"></span>
+          </button>
+          <button class="button button--ghost" id="open-target" type="button">
+            <span class="button__icon" data-icon="externalLink"></span>
+            <span class="button__label"></span>
+          </button>
+        </div>
+        <p class="feedback" id="feedback" role="status" hidden></p>
       </section>
 
       <footer class="muted" id="version"></footer>

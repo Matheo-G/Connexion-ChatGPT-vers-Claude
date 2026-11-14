@@ -45,13 +45,30 @@ Seul le dossier `providers/` connaît le DOM des sites. Quand un site change, la
 
 ## Conventions
 
-- **Modules ES natifs**, aucun build. Le service worker est en `type: module` ; les content scripts passent par un loader qui fait `import()` (étape 1).
+- **Modules ES natifs**, aucun build. Le service worker est en `type: module` ; le content script `content/loader.js` (script classique) importe `content/runtime.js` via `import()`. Les dossiers importés côté page sont listés dans `web_accessible_resources`.
+- **Pas d'`import()` dynamique dans le service worker** (interdit par Chrome) : les providers exposent un `adapterPath` (chaîne), chargé uniquement côté page.
 - **Messages** : toujours via `MessageType` (`shared/message-types.js`), jamais de chaîne en dur. Enveloppe `{ type, payload, requestId }`, réponse `{ ok, data | error }`.
 - **Erreurs** : toujours `RouterError` avec un `ErrorCode`. Sérialisable à travers la messagerie. Le message utilisateur vient de `_locales` (`error_<CODE>`).
 - **Logs** : `createLogger('module')`. `debug` n'apparaît qu'en mode debug (réglage `debugMode`).
 - **État** : jamais de variable globale critique dans le service worker → `chrome.storage.session`.
 - **Textes UI** : `_locales/fr/messages.json` + `data-i18n` dans le HTML.
 - **Clés de stockage** : `StorageKey` dans `shared/defaults.js`.
+
+## Préparation d'un onglet cible (étape 1)
+
+`background/target-session.js → prepareTarget(providerId, options)` :
+
+1. **Choix de l'onglet** : avec `newConversation`, on prend un onglet déjà sur la page « nouvelle conversation », sinon le meilleur onglet existant qu'on y navigue, sinon un nouvel onglet ouvert à côté de la source. Sans `newConversation`, on réutilise le meilleur onglet ouvert.
+2. **Focus immédiat** (retour visuel instantané), puis attente du chargement. Après une navigation, on attend la **nouvelle** page, pas l'ancienne.
+3. **Handshake** : `PING` ; sans réponse (onglet ouvert avant l'installation, extension rechargée), le loader est injecté à la demande, puis on attend une réponse.
+4. Le loader est idempotent : une double injection ne lance pas deux runtimes. Une instance orpheline est remplacée proprement (événement `ai-router:teardown`).
+
+Helpers de debug dans la console du service worker : `await aiRouter.prepareTarget('claude', { activate: false })`, `await aiRouter.getStatus()`.
+
+## Tests
+
+- `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
+- `npm run test:e2e` : Chromium avec l'extension chargée. claude.ai et chatgpt.com sont remplacés par des fixtures locales (`tests/e2e/fixtures/`), donc pas de réseau ni de compte. Nécessite Playwright.
 
 ## Flux V1 (cible)
 
@@ -74,8 +91,8 @@ Seul le dossier `providers/` connaît le DOM des sites. Quand un site change, la
 | Étape | Contenu | État |
 |---|---|---|
 | 0 | Fondations : manifest, structure, logger, erreurs, messages, i18n, design tokens, icônes | ✅ |
-| 1 | Messagerie + gestion des onglets + handshake | ⏳ |
-| 2 | Adaptateur Claude (insertion + envoi) | |
+| 1 | Messagerie + gestion des onglets + injection + handshake | ✅ |
+| 2 | Adaptateur Claude (insertion + envoi) | ⏳ |
 | 3 | Adaptateur ChatGPT (extraction + Markdown) | |
 | 4 | Pipeline + bouton injecté → **V1** | |
 | 5 | Popup + options | |

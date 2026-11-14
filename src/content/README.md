@@ -8,4 +8,4 @@ Runtime injecté dans les pages des IA (ChatGPT, Claude…).
 
 Ne contient **aucun sélecteur spécifique à un site** : ils vivent dans `providers/`.
 
-_Implémenté aux étapes 1 à 4._
+_Loader + runtime : étape 1 ✅ — UI : étape 4._
