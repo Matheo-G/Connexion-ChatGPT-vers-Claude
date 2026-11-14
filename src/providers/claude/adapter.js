@@ -1,19 +1,22 @@
 /**
  * @file Claude DOM adapter (runs inside claude.ai).
- *
- * Step 1: only describes the page for the handshake.
- * Step 2 adds TARGET_SUBMIT (insert + send) and TARGET_HEALTH.
+ * Wires the writer to the message bus; DOM details live in writer.js / selectors.js.
  */
+
+import { MessageType } from '../../shared/message-types.js';
+import { submit, health } from './writer.js';
 
 /**
  * @param {{log: ReturnType<import('../../utils/logger.js').createLogger>}} context
  * @returns {import('../../content/runtime.js').ProviderAdapter}
  */
 export function createAdapter({ log }) {
-  log.debug('Claude adapter created');
   return {
-    describe: () => ({ path: location.pathname }),
-    handlers: {},
+    describe: () => ({ path: location.pathname, ...health() }),
+    handlers: {
+      [MessageType.TARGET_SUBMIT]: (payload) => submit(payload, { log }),
+      [MessageType.TARGET_HEALTH]: () => health(),
+    },
     destroy() {},
   };
 }

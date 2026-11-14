@@ -1,6 +1,26 @@
 <!doctype html>
-<!-- Minimal stand-in for claude.ai. Enriched with the real editor DOM at step 2. -->
-<html lang="en">
-  <head><meta charset="utf-8" /><title>Claude (fixture)</title></head>
-  <body><main id="app">Claude fixture</main></body>
+<!-- Stand-in for claude.ai: same editor stack (Tiptap/ProseMirror), French UI. -->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Claude (fixture)</title>
+    <style>
+      body { font-family: system-ui; margin: 2rem; }
+      fieldset { border: 1px solid #ccc; border-radius: 12px; padding: 12px; }
+      .ProseMirror { min-height: 48px; outline: none; }
+      .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #999; float: left; height: 0; pointer-events: none; }
+      .attachment { display: inline-block; padding: 4px 8px; background: #eee; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <div id="banner" role="alert"></div>
+    <fieldset>
+      <div id="attachments"></div>
+      <div id="editor-host"></div>
+      <button type="button" aria-label="Joindre un fichier">+</button>
+      <button id="send" type="button" aria-label="Envoyer le message" disabled>↑</button>
+    </fieldset>
+    <script src="/__fixtures/claude-composer.js"></script>
+  </body>
 </html>

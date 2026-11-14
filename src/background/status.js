@@ -12,8 +12,9 @@ import { pingTab } from './injector.js';
  * @property {string} name
  * @property {readonly string[]} roles
  * @property {number} tabCount
- * @property {'ready' | 'not-ready' | 'no-tab'} state
- *   not-ready = tab open but no content script answering (opened before install, still loading…).
+ * @property {'ready' | 'logged-out' | 'not-ready' | 'no-tab'} state
+ *   not-ready  = tab open but no content script answering (still loading, crashed…);
+ *   logged-out = the adapter reports the login screen.
  */
 
 /** @returns {Promise<ProviderStatus[]>} */
@@ -24,12 +25,18 @@ export function getStatus() {
 async function getProviderStatus(provider) {
   const tabs = await queryTabs(provider.matches);
   const best = pickBestTab(tabs);
-  const state = !best ? 'no-tab' : (await pingTab(best.id)) ? 'ready' : 'not-ready';
+  const page = best ? await pingTab(best.id) : null;
   return {
     id: provider.id,
     name: provider.name,
     roles: provider.roles,
     tabCount: tabs.length,
-    state,
+    state: toState(best, page),
   };
+}
+
+function toState(tab, page) {
+  if (!tab) return 'no-tab';
+  if (!page) return 'not-ready';
+  return page.loggedIn === false ? 'logged-out' : 'ready';
 }

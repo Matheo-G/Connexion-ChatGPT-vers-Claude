@@ -6,7 +6,7 @@
 
 import { MessageType } from '../shared/message-types.js';
 import { RouterError } from '../shared/errors.js';
-import { DEFAULT_SETTINGS } from '../shared/defaults.js';
+import { DEFAULT_SETTINGS, Timeouts } from '../shared/defaults.js';
 import { getProvider, listProviders } from '../providers/registry.js';
 import { sendToBackground } from '../services/messaging.js';
 import { localizeDocument, t } from '../utils/i18n.js';
@@ -17,12 +17,10 @@ import { createLogger } from '../utils/logger.js';
 const log = createLogger('popup');
 const target = getProvider(DEFAULT_SETTINGS.defaultTarget, 'target');
 
-/** Preparing a fresh tab can take a while (page load + handshake). */
-const PREPARE_TIMEOUT = 45_000;
-
 const STATE_LABELS = {
   ready: 'stateReady',
   'not-ready': 'stateNotReady',
+  'logged-out': 'stateLoggedOut',
   'no-tab': 'stateNoTab',
   checking: 'stateChecking',
 };
@@ -68,17 +66,15 @@ function renderProvider({ name, roles, state }) {
 // ---- Diagnostic actions -------------------------------------------------
 
 /**
- * @param {boolean} activate  false keeps the popup open to show the result.
+ * Runs a background action with busy state and feedback.
+ * Actions that focus the Claude tab close the popup: the background keeps
+ * going and the result is visible in Claude itself.
  */
-async function prepareTarget(button, activate) {
+async function runAction(button, type, payload) {
   setBusy(button, true);
   showFeedback('info', t('testRunning'));
   try {
-    const result = await sendToBackground(
-      MessageType.OPEN_TARGET,
-      { providerId: target.id, activate },
-      { timeout: PREPARE_TIMEOUT },
-    );
+    const result = await sendToBackground(type, payload, { timeout: Timeouts.DELIVERY });
     const seconds = `${(result.durationMs / 1000).toFixed(1).replace('.', ',')} s`;
     showFeedback('success', t('testSuccess', [target.name, seconds]));
   } catch (error) {
@@ -88,6 +84,21 @@ async function prepareTarget(button, activate) {
     refreshStatus();
   }
 }
+
+const testConnection = (button) =>
+  runAction(button, MessageType.OPEN_TARGET, { providerId: target.id, activate: false });
+
+const openTarget = (button) =>
+  runAction(button, MessageType.OPEN_TARGET, { providerId: target.id, activate: true });
+
+/** Inserts a sample text WITHOUT sending it: no Claude message is consumed. */
+const insertTestText = (button) =>
+  runAction(button, MessageType.DELIVER_TEXT, {
+    providerId: target.id,
+    text: t('testInsertText'),
+    autoSend: false,
+    activate: true,
+  });
 
 function setBusy(button, busy) {
   for (const b of document.querySelectorAll('.actions .button')) b.disabled = busy;
@@ -111,12 +122,14 @@ function renderStaticTexts() {
   $('version').textContent = t('versionLabel', version) || `v${version}`;
   $('test-target').querySelector('.button__label').textContent = t('actionTestTarget', target.name);
   $('open-target').querySelector('.button__label').textContent = t('actionOpenTarget', target.name);
+  $('insert-test').querySelector('.button__label').textContent = t('actionInsertTest');
 }
 
 function bindActions() {
   $('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
-  $('test-target').addEventListener('click', (e) => prepareTarget(e.currentTarget, false));
-  $('open-target').addEventListener('click', (e) => prepareTarget(e.currentTarget, true));
+  $('test-target').addEventListener('click', (e) => testConnection(e.currentTarget));
+  $('open-target').addEventListener('click', (e) => openTarget(e.currentTarget));
+  $('insert-test').addEventListener('click', (e) => insertTestText(e.currentTarget));
 }
 
 function init() {

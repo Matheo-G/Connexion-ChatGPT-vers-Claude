@@ -65,10 +65,28 @@ Seul le dossier `providers/` connaît le DOM des sites. Quand un site change, la
 
 Helpers de debug dans la console du service worker : `await aiRouter.prepareTarget('claude', { activate: false })`, `await aiRouter.getStatus()`.
 
+## Écriture dans une IA cible (étape 2)
+
+`background/delivery.js → deliverText(providerId, text, options)` prépare l'onglet (étape 1) puis envoie `TARGET_SUBMIT` à l'adaptateur.
+
+Côté page (`providers/claude/writer.js`) :
+
+1. **Connexion** : écran `/login` ou formulaire e-mail détecté → `TARGET_NOT_LOGGED_IN`, sans attendre.
+2. **Éditeur** : attente par `MutationObserver` (fonctionne aussi en onglet d'arrière-plan) → `EDITOR_NOT_FOUND` après 15 s.
+3. **Insertion** (`utils/rich-text-input.js`, générique) : les éditeurs riches (ProseMirror, Lexical…) ignorent `innerText`. On essaie, en vérifiant après chaque essai :
+   1. `paste` synthétique : la méthode la plus fidèle, qui garde les sauts de ligne et laisse Claude transformer un très long texte en pièce jointe ;
+   2. `execCommand('insertText')`, qui imite la frappe ;
+   3. réécriture du DOM + événement `input`, en dernier recours.
+
+   Le brouillon éventuel est remplacé, pas complété.
+4. **Envoi** : clic sur le bouton d'envoi (cherché d'abord dans le composer, libellé FR ou EN), sinon touche Entrée. On **vérifie** que le message est parti : URL changée, composer vidé, ou bouton désactivé. Sinon `TARGET_RATE_LIMITED` si un bandeau de limite est visible, et `SEND_FAILED` dans les autres cas.
+
+Tous les sélecteurs sont dans `providers/claude/selectors.js`.
+
 ## Tests
 
 - `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
-- `npm run test:e2e` : Chromium avec l'extension chargée. claude.ai et chatgpt.com sont remplacés par des fixtures locales (`tests/e2e/fixtures/`), donc pas de réseau ni de compte. Nécessite Playwright.
+- `npm run test:e2e` : Chromium avec l'extension chargée. claude.ai et chatgpt.com sont servis par un serveur HTTPS local (`--host-resolver-rules`), donc pas de réseau ni de compte. La fixture Claude utilise un **vrai éditeur Tiptap/ProseMirror** et simule le chargement lent, la déconnexion, la limite d'usage, un collage ignoré, un bouton cassé… Nécessite Playwright, et `npm install` pour les dépendances de développement (Tiptap, esbuild).
 
 ## Flux V1 (cible)
 
@@ -92,8 +110,8 @@ Helpers de debug dans la console du service worker : `await aiRouter.prepareTarg
 |---|---|---|
 | 0 | Fondations : manifest, structure, logger, erreurs, messages, i18n, design tokens, icônes | ✅ |
 | 1 | Messagerie + gestion des onglets + injection + handshake | ✅ |
-| 2 | Adaptateur Claude (insertion + envoi) | ⏳ |
-| 3 | Adaptateur ChatGPT (extraction + Markdown) | |
+| 2 | Adaptateur Claude (insertion + envoi) | ✅ |
+| 3 | Adaptateur ChatGPT (extraction + Markdown) | ⏳ |
 | 4 | Pipeline + bouton injecté → **V1** | |
 | 5 | Popup + options | |
 | 6 | Robustesse et cas limites | |

@@ -33,6 +33,9 @@
   "stateNotReady": {
     "message": "Onglet à recharger"
   },
+  "stateLoggedOut": {
+    "message": "Non connecté"
+  },
   "stateNoTab": {
     "message": "Aucun onglet ouvert"
   },
@@ -54,6 +57,12 @@
         "content": "$1"
       }
     }
+  },
+  "actionInsertTest": {
+    "message": "Insérer un texte de test"
+  },
+  "testInsertText": {
+    "message": "✅ Test Mathéo AI Router\nSi vous lisez ce texte dans Claude, l'insertion fonctionne.\nMise en forme : **gras**, `code`, et une liste :\n- point 1\n- point 2\nRien n'a été envoyé : vous pouvez l'effacer."
   },
   "testRunning": {
     "message": "Connexion en cours…"

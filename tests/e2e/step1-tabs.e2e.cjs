@@ -21,7 +21,7 @@ after(async () => {
 });
 
 beforeEach(async () => {
-  h.control.hang = null;
+  Object.assign(h.control, { hang: null, fixture: {}, loggedOut: false });
   for (const page of h.pagesOf('claude.ai')) await page.close();
 });
 
@@ -104,8 +104,15 @@ test('tab without a live content script (opened before install) → re-injected'
 test('tab closed while loading → TARGET_UNAVAILABLE', async () => {
   h.control.hang = /claude\.ai\/new/;
   const pending = OPEN({ providerId: 'claude', activate: false });
-  const page = await h.context.waitForEvent('page', (p) => p.url().includes('claude.ai'));
-  await page.close();
+  // The tab never finishes loading: find and close it through the Chrome API.
+  const tabId = await h.evalSW(async () => {
+    for (;;) {
+      const [tab] = await chrome.tabs.query({ url: 'https://claude.ai/*' });
+      if (tab) return tab.id;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  });
+  await h.evalSW((id) => chrome.tabs.remove(id), tabId);
   const res = await pending;
   assert.equal(res.ok, false);
   assert.equal(res.error.code, 'TARGET_UNAVAILABLE');

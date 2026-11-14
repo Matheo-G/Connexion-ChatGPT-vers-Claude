@@ -22,6 +22,8 @@ export const MessageType = Object.freeze({
   // --- Routing pipeline ------------------------------------------------
   /** content (source) | popup → background: start a routing job */
   ROUTE_REQUEST: 'pipeline/route-request',
+  /** popup | pipeline → background: deliver a given text to a target AI */
+  DELIVER_TEXT: 'pipeline/deliver-text',
   /** background → content (source): progress update for the UI */
   PIPELINE_STATUS: 'pipeline/status',
 

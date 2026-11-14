@@ -17,6 +17,7 @@ import { backgroundHandlers } from './message-router.js';
 import { prepareTarget } from './target-session.js';
 import { ensureContentScript, pingTab } from './injector.js';
 import { getStatus } from './status.js';
+import { deliverText } from './delivery.js';
 
 const log = createLogger('service-worker');
 
@@ -35,8 +36,15 @@ chrome.runtime.onStartup.addListener(() => {
  * Debug helpers, callable from the service worker console
  * (chrome://extensions → "service worker"):
  *   await aiRouter.prepareTarget('claude', { activate: false })
+ *   await aiRouter.deliverText('claude', 'Bonjour', { autoSend: false })
  *   await aiRouter.getStatus()
  */
-globalThis.aiRouter = Object.freeze({ prepareTarget, ensureContentScript, pingTab, getStatus });
+globalThis.aiRouter = Object.freeze({
+  prepareTarget,
+  deliverText,
+  ensureContentScript,
+  pingTab,
+  getStatus,
+});
 
 log.debug('Service worker evaluated');

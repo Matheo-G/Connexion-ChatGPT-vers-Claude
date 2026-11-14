@@ -43,6 +43,10 @@ export const Timeouts = Object.freeze({
   ELEMENT: 15_000,
   /** Default request/response timeout for runtime messaging. */
   MESSAGE: 15_000,
+  /** Insert + send in the target page (includes waiting for the editor). */
+  SUBMIT: 40_000,
+  /** Full delivery as seen by a caller: tab load + handshake + submit. */
+  DELIVERY: 90_000,
 });
 
 /** Max number of entries kept in history. */
