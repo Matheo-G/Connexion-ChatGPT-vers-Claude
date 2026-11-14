@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mathéo AI Router</title>
+    <link rel="stylesheet" href="../ui-kit/tokens.css" />
+    <link rel="stylesheet" href="../ui-kit/base.css" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup fade-in">
+      <header class="brand">
+        <span class="brand__mark" data-icon="logo"></span>
+        <div>
+          <h1 class="brand__name" data-i18n="extName">Mathéo AI Router</h1>
+          <p class="brand__subtitle" data-i18n="popupSubtitle">Orchestrateur d'IA</p>
+        </div>
+        <button class="icon-button" id="open-options" type="button" data-icon="settings" aria-label="Réglages"></button>
+      </header>
+
+      <section class="card">
+        <p class="status">
+          <span class="status__dot" aria-hidden="true"></span>
+          <span data-i18n="statusFoundationsReady">Fondations installées.</span>
+        </p>
+      </section>
+
+      <footer class="muted" id="version"></footer>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

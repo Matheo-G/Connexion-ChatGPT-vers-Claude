@@ -1,0 +1,30 @@
+{
+  "extName": {
+    "message": "Mathéo AI Router",
+    "description": "Nom de l'extension"
+  },
+  "extDescription": {
+    "message": "Envoie en un clic les réponses de ChatGPT vers Claude, et bientôt vers d'autres IA.",
+    "description": "Description affichée dans le Chrome Web Store et chrome://extensions"
+  },
+
+  "popupSubtitle": { "message": "Orchestrateur d'IA" },
+  "optionsTitle": { "message": "Réglages" },
+  "statusFoundationsReady": { "message": "Fondations installées. Le routage arrive à l'étape suivante." },
+  "versionLabel": { "message": "Version $VERSION$", "placeholders": { "version": { "content": "$1" } } },
+
+  "error_UNKNOWN": { "message": "Une erreur inattendue s'est produite." },
+  "error_TIMEOUT": { "message": "L'opération a pris trop de temps. Réessayez." },
+  "error_MESSAGING_FAILED": { "message": "La communication avec l'onglet a échoué. Rechargez la page." },
+  "error_SOURCE_UNAVAILABLE": { "message": "Impossible de lire la page ChatGPT." },
+  "error_NO_CONTENT": { "message": "Aucune réponse à envoyer pour le moment." },
+  "error_STILL_GENERATING": { "message": "ChatGPT est encore en train de répondre. Patientez un instant." },
+  "error_TARGET_UNAVAILABLE": { "message": "Impossible d'ouvrir l'IA de destination." },
+  "error_TARGET_NOT_LOGGED_IN": { "message": "Vous n'êtes pas connecté à l'IA de destination." },
+  "error_TARGET_RATE_LIMITED": { "message": "La limite d'utilisation de l'IA de destination est atteinte." },
+  "error_EDITOR_NOT_FOUND": { "message": "La zone de saisie de l'IA de destination est introuvable." },
+  "error_INSERT_FAILED": { "message": "Le texte n'a pas pu être inséré." },
+  "error_SEND_FAILED": { "message": "Le message n'a pas pu être envoyé." },
+  "error_WORKFLOW_NOT_FOUND": { "message": "Ce workflow n'existe pas." },
+  "error_PROVIDER_NOT_FOUND": { "message": "Cette IA n'est pas prise en charge." }
+}

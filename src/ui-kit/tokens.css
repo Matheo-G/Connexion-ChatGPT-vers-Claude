@@ -1,0 +1,107 @@
+/*
+ * Design tokens — single source of truth for the visual identity.
+ * Used by the popup, the options page and (copied into Shadow DOM) the UI
+ * injected into ChatGPT/Claude.
+ *
+ * Theme resolution:
+ *   - default: follows the OS (prefers-color-scheme);
+ *   - forced:  <html data-theme="light|dark"> set from user settings.
+ */
+
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+
+  /* Spacing (4px scale) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* Motion — short and subtle */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 280ms;
+
+  /* Light palette (slate + indigo accent) */
+  --color-bg: #ffffff;
+  --color-surface: #f6f7f9;
+  --color-surface-hover: #eef0f3;
+  --color-border: #e3e6eb;
+  --color-text: #15171c;
+  --color-text-muted: #5d6573;
+  --color-accent: #5b6cff;
+  --color-accent-hover: #4a5af0;
+  --color-accent-contrast: #ffffff;
+  --color-success: #17a34a;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --shadow-md: 0 4px 16px rgb(15 23 42 / 0.08), 0 1px 3px rgb(15 23 42 / 0.06);
+  --focus-ring: 0 0 0 3px rgb(91 108 255 / 0.35);
+
+  color-scheme: light;
+}
+
+/* Dark palette — applied when the OS is dark, unless the user forced light. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #121418;
+    --color-surface: #1b1e24;
+    --color-surface-hover: #242830;
+    --color-border: #2c313a;
+    --color-text: #eceef2;
+    --color-text-muted: #9aa3b2;
+    --color-accent: #7c8cff;
+    --color-accent-hover: #919fff;
+    --color-accent-contrast: #0d0f14;
+    --color-success: #34d399;
+    --color-warning: #fbbf24;
+    --color-danger: #f87171;
+    --shadow-md: 0 4px 20px rgb(0 0 0 / 0.45);
+    --focus-ring: 0 0 0 3px rgb(124 140 255 / 0.4);
+    color-scheme: dark;
+  }
+}
+
+/* Dark palette — forced by the user. */
+:root[data-theme='dark'] {
+  --color-bg: #121418;
+  --color-surface: #1b1e24;
+  --color-surface-hover: #242830;
+  --color-border: #2c313a;
+  --color-text: #eceef2;
+  --color-text-muted: #9aa3b2;
+  --color-accent: #7c8cff;
+  --color-accent-hover: #919fff;
+  --color-accent-contrast: #0d0f14;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --shadow-md: 0 4px 20px rgb(0 0 0 / 0.45);
+  --focus-ring: 0 0 0 3px rgb(124 140 255 / 0.4);
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}
