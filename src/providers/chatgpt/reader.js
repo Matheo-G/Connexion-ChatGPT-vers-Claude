@@ -22,10 +22,14 @@ import { LAYOUTS, SELECTORS } from './selectors.js';
 
 // ---- DOM helpers ----------------------------------------------------------
 
-/** Laid out, i.e. not inside a `display: none` / hidden ancestor (cached pages). */
+/**
+ * Not inside a `display: none` / hidden ancestor (ChatGPT keeps earlier
+ * conversations in the page that way). `display: contents` wrappers, which
+ * ChatGPT uses a lot, have no box of their own but are NOT hidden — hence
+ * this walk instead of Element.checkVisibility().
+ */
 export function isRendered(el) {
   if (!el.isConnected) return false;
-  if (typeof el.checkVisibility === 'function') return el.checkVisibility();
   for (let node = el; node; node = node.parentElement) {
     if (node.hidden || getComputedStyle(node).display === 'none') return false;
   }
@@ -78,8 +82,16 @@ export function describeLayout() {
 export function isGenerating() {
   return Boolean(
     queryFirst(SELECTORS.stopButton) ||
-      queryFirst(SELECTORS.streamingMarker, { filter: isRendered }),
+      queryFirst(SELECTORS.streamingMarker, { filter: isRendered }) ||
+      lastTurnInProgress(),
   );
+}
+
+/** The newest turn declares a state other than finished (turn-key layout). */
+function lastTurnInProgress() {
+  const states = [...document.querySelectorAll(SELECTORS.turnState.selector)].filter(isRendered);
+  const state = states.at(-1)?.getAttribute(SELECTORS.turnState.attribute);
+  return Boolean(state) && !SELECTORS.turnState.finished.test(state);
 }
 
 // ---- Locating the answer ----------------------------------------------------
@@ -104,7 +116,11 @@ function promptFor(reply, layout) {
 
 function toMarkdown(reply, layout) {
   const content = queryFirst(layout.content, { root: reply, filter: () => true })?.element ?? reply;
-  return htmlToMarkdown(content, { ignore: SELECTORS.ignoreInContent });
+  return htmlToMarkdown(content, {
+    ignore: SELECTORS.ignoreInContent,
+    codeBlocks: SELECTORS.codeBlocks,
+    codeLanguageLabels: SELECTORS.codeLanguageLabels,
+  });
 }
 
 // ---- Public API ---------------------------------------------------------------

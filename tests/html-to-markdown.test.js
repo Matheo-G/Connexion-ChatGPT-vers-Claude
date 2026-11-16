@@ -133,3 +133,52 @@ test('code block without <code>: the copy button is dropped (known limit: a bare
   const html = '<pre><div>python</div><button>Copier le code</button><div>print("ok")</div></pre>';
   assert.equal(md(html), '```\npythonprint("ok")\n```');
 });
+
+// ---- Real ChatGPT "turn-key" markup (from a user diagnostic, Nov. 2026) ----
+
+const CHATGPT_OPTIONS = {
+  ignore: ['[data-markdown-copy="exclude"]'],
+  codeBlocks: ['[data-code-block="true"]'],
+  codeLanguageLabels: ['[data-markdown-copy="exclude"] .truncate'],
+};
+
+/** Like React output: no formatting whitespace between tags. */
+const codeBlock = (body) =>
+  `
+  <div data-chatgpt-copy-code="x"><div data-code-block="true" data-markdown-copy="code-block">
+    <div data-markdown-copy="exclude" contenteditable="false"><svg></svg><div class="min-w-0 truncate flex-1">JavaScript</div>
+      <div><div data-code-block-controls="true" role="presentation"><button>Copier</button></div></div></div>
+    <div class="relative"><div class="w-full overflow-x-hidden"><div class="relative z-0 flex max-w-full">@BODY@</div></div>
+      <button aria-hidden="true" aria-label="Faire défiler jusqu’en bas"></button></div>
+  </div></div>`
+    .replace(/>\s+</g, '><')
+    .trim()
+    .replace('@BODY@', body);
+const EXPECTED_CODE = '```javascript\nfunction saluer(nom) {\n  return nom;\n}\n```';
+
+test('turn-key code block with <pre><code>', () => {
+  const html = codeBlock('<pre><code>function saluer(nom) {\n  return nom;\n}</code></pre>');
+  assert.equal(md(html, CHATGPT_OPTIONS), EXPECTED_CODE);
+});
+
+test('turn-key code block with CodeMirror lines and a line-number gutter', () => {
+  const html = codeBlock(
+    '<div class="cm-gutters" aria-hidden="true"><div>1</div><div>2</div><div>3</div></div>' +
+      '<div class="cm-content"><div class="cm-line">function saluer(nom) {</div><div class="cm-line">  return nom;</div><div class="cm-line">}</div></div>',
+  );
+  assert.equal(md(html, CHATGPT_OPTIONS), EXPECTED_CODE);
+});
+
+test('turn-key code block with bare text keeps indentation and newlines', () => {
+  const html = codeBlock('<div>function saluer(nom) {\n  return nom;\n}</div>');
+  assert.equal(md(html, CHATGPT_OPTIONS), EXPECTED_CODE);
+});
+
+test('turn-key display math span, table actions excluded', () => {
+  const html =
+    '<p><span>Pythagore :</span></p>' +
+    '<span data-math-display="true" data-math-source="a^2 + b^2 = c^2"><span class="katex-display"><span class="katex">rendu</span></span></span>' +
+    '<div data-markdown-table="true"><div><table><thead><tr><th>A</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table></div>' +
+    '<div data-block-actions="true" data-markdown-copy="exclude"><button aria-label="Copier le tableau"></button></div></div>';
+  assert.equal(md(html, CHATGPT_OPTIONS), 'Pythagore :\n\n$$\na^2 + b^2 = c^2\n$$\n\n| A |\n| --- |\n| 1 |');
+});

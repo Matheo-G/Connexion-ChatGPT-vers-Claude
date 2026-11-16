@@ -27,7 +27,7 @@ export const LAYOUTS = Object.freeze([
     reply: ['[data-chatgpt-selection-message-id]', '[data-content-search-unit-key$=":assistant"]'],
     prompt: ['[data-user-message-bubble="true"]', '[data-content-search-unit-key$=":user"]'],
     replyIdAttribute: 'data-chatgpt-selection-message-id',
-    content: ['.markdown', '.prose'],
+    content: ['[data-markdown-text-style="assistant-message"]', '.markdown', '.prose'],
   },
   {
     // Classic layout (still served to some accounts and logged-out users).
@@ -54,8 +54,25 @@ export const SELECTORS = Object.freeze({
   /** Streaming markers on the answer being written (layout-dependent). */
   streamingMarker: ['.result-streaming', '.streaming-animation'],
 
+  /**
+   * Turn-key layout: each turn declares its state ("complete" when done).
+   * Any other value on the newest turn means ChatGPT is still working.
+   */
+  turnState: Object.freeze({
+    selector: '[data-talvt-turn-state]',
+    attribute: 'data-talvt-turn-state',
+    finished: /^(complete|completed|done|error|failed|stopped|cancell?ed|aborted)$/i,
+  }),
+
+  /** Code blocks rendered without <pre> (turn-key layout). */
+  codeBlocks: ['[data-code-block="true"]'],
+
+  /** The language label in a code block header. */
+  codeLanguageLabels: ['[data-markdown-copy="exclude"] .truncate', '[data-markdown-copy="exclude"] div'],
+
   /** Site UI living inside answers, never part of the text. */
   ignoreInContent: [
+    '[data-markdown-copy="exclude"]',
     '[data-testid="webpage-citation-pill"]',
     '[data-testid$="-turn-action-button"]',
     '.turn-action-controls',

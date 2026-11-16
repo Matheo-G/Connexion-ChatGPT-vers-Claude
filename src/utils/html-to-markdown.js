@@ -31,11 +31,20 @@ const TEXT_NODE = 3;
 
 /**
  * @param {Element} root
- * @param {{ignore?: string[]}} [options]  Extra CSS selectors to skip (site UI).
+ * @param {Object} [options]
+ * @param {string[]} [options.ignore]      Extra CSS selectors to skip (site UI).
+ * @param {string[]} [options.codeBlocks]  Extra selectors of code-block containers
+ *   (sites that no longer render code in <pre>).
+ * @param {string[]} [options.codeLanguageLabels]  Where a code block shows its
+ *   language as text (header label), relative to the block.
  * @returns {string}
  */
-export function htmlToMarkdown(root, { ignore = [] } = {}) {
-  const ctx = { ignore: [...ALWAYS_IGNORED, ...ignore].join(',') };
+export function htmlToMarkdown(root, { ignore = [], codeBlocks = [], codeLanguageLabels = [] } = {}) {
+  const ctx = {
+    ignore: [...ALWAYS_IGNORED, ...ignore].join(','),
+    codeBlocks: ['pre', ...codeBlocks].join(','),
+    codeLanguageLabels,
+  };
   ctx.isIgnored = (node) => isIgnored(node, ctx);
   return joinBlocks(renderBlocks(root, ctx)).trim();
 }
@@ -72,9 +81,8 @@ function renderBlocks(node, ctx) {
 function renderBlock(el, ctx) {
   const tag = el.tagName;
   if (/^H[1-6]$/.test(tag)) return heading(el, ctx);
+  if (el.matches(ctx.codeBlocks)) return [codeBlock(el, ctx)];
   switch (tag) {
-    case 'PRE':
-      return [codeBlock(el, ctx)];
     case 'UL':
     case 'OL':
       return [list(el, ctx)];
@@ -95,12 +103,21 @@ function heading(el, ctx) {
   return text ? [`${'#'.repeat(Number(el.tagName[1]))} ${text}`] : [];
 }
 
-function codeBlock(pre, ctx) {
-  const code = pre.querySelector('code');
-  const source = codeText(code ?? pre, ctx).replace(/\n$/, '');
-  const language = detectLanguage(code ?? pre);
+function codeBlock(block, ctx) {
+  const code = block.querySelector('code');
+  const source = codeText(code && !block.querySelector('.cm-line') ? code : block, ctx).replace(/\n$/, '');
+  const language = detectLanguage(code) || detectLanguage(block) || languageLabel(block, ctx);
   const fence = fenceFor(source, '`', 3);
   return `${fence}${language}\n${source}\n${fence}`;
+}
+
+/** Language shown as a header label ("JavaScript" → "javascript"). */
+function languageLabel(block, ctx) {
+  for (const selector of ctx.codeLanguageLabels) {
+    const text = block.querySelector(selector)?.textContent.trim();
+    if (text && /^[\w#+. -]{1,30}$/.test(text)) return text.toLowerCase().replace(/\s+/g, '');
+  }
+  return '';
 }
 
 /**
@@ -112,7 +129,13 @@ function codeText(el, ctx) {
   const lines = el.querySelectorAll('.cm-line');
   if (lines.length) return [...lines].map((line) => line.textContent).join('\n');
   if (el.tagName === 'CODE') return el.textContent;
-  return rawText(el, ctx);
+  const pre = el.tagName === 'PRE' ? null : el.querySelector('pre');
+  return trimBlankLines(rawText(pre ?? el, ctx));
+}
+
+/** Removes whole blank lines at both ends, keeping the first line's indentation. */
+function trimBlankLines(text) {
+  return text.replace(/^(?:[ \t]*\n)+/, '').replace(/(?:\n[ \t]*)+$/, '');
 }
 
 function rawText(node, ctx) {
@@ -248,7 +271,8 @@ function isMath(el) {
 /** Display (block) formula: KaTeX display wrapper, or a math source on a block element. */
 function isDisplayMath(el) {
   if (el.classList?.contains('katex-display')) return true;
-  return Boolean(el.hasAttribute?.('data-math-source') && BLOCK_TAGS.has(el.tagName));
+  if (!el.hasAttribute?.('data-math-source')) return false;
+  return el.getAttribute('data-math-display') === 'true' || BLOCK_TAGS.has(el.tagName);
 }
 
 function tex(el) {

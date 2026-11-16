@@ -182,3 +182,8 @@ test('popup diagnostic: layout and markers, without any conversation text', asyn
   }
   await popup.close();
 });
+
+test('turn-key layout: the turn state alone reveals writing (no stop button)', async () => {
+  await openChatGPT({ layout: 'turn-key', streaming: true, stopButton: false });
+  assert.equal((await read()).error.code, 'STILL_GENERATING');
+});

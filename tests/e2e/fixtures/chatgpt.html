@@ -18,6 +18,7 @@
     empty      no conversation yet
     streaming  the last answer is being written; finishes after `streamMs`
                (omit streamMs to stream forever)
+    stopButton false: (turn-key) no stop button, only the turn state says "streaming"
     split      the last turn holds two assistant messages (around a tool call)
 -->
 <html lang="fr">
@@ -60,6 +61,18 @@ frame.<span class="hljs-property">layoutMode</span> = <span class="hljs-string">
       <blockquote><p>Garde une palette sobre.</p></blockquote>
     </template>
 
+    <!-- Same answer as rendered by the turn-key layout (real markup, Nov. 2026). -->
+    <template id="rich-answer-turn-key">
+      <h2><span>Écran de connexion</span></h2>
+      <p><span>Voici un prompt <strong>optimisé</strong> pour <em>Figma</em>, avec <code>Auto Layout</code>. Source <a href="https://help.figma.com">Figma Help</a><span data-testid="webpage-citation-pill"><a href="https://lemonde.fr">lemonde.fr</a></span>.</span></p>
+      <div data-chatgpt-copy-code="x"><div data-code-block="true" data-markdown-copy="code-block" data-theme="dark"><div data-markdown-copy="exclude" contenteditable="false"><svg width="10" height="10"></svg><div class="min-w-0 truncate flex-1">JavaScript</div><div class="ms-auto flex"><div data-code-block-controls="true" role="presentation"><button type="button" aria-label="Copier">Copier</button></div></div></div><div class="relative"><div class="w-full overflow-x-hidden"><div class="relative z-0 flex max-w-full"><pre><code><span>const</span> frame = figma.createFrame();
+frame.layoutMode = <span>"VERTICAL"</span>;</code></pre></div></div><button aria-hidden="true" aria-label="Faire défiler jusqu’en bas" type="button"></button></div></div></div>
+      <ul><li><span>Champs</span><ul><li><span>Email</span></li><li><span>Mot de passe</span></li></ul></li><li><span>Bouton <strong>Continuer</strong></span></li></ul>
+      <div data-markdown-table="true"><div data-horizontal-scroll="true"><div><table><thead><tr><th>Élément</th><th>Espacement</th></tr></thead><tbody><tr><td>Champ</td><td>16 px</td></tr><tr><td>Bouton</td><td>24 px</td></tr></tbody></table></div></div><div data-block-actions="true" data-markdown-copy="exclude"><button type="button" aria-label="Copier le tableau">⧉</button><button type="button" aria-label="Développer le tableau">⤢</button></div></div>
+      <p><span>Ratio : <span data-math-source="\frac{16}{9}"><span class="katex"><span class="katex-html" aria-hidden="true">16/9</span></span></span></span></p>
+      <blockquote><p><span>Garde une palette sobre.</span></p></blockquote>
+    </template>
+
     <script>
       const cfg = window.__FIXTURE__ || {};
       const thread = document.getElementById('thread');
@@ -99,24 +112,50 @@ frame.<span class="hljs-property">layoutMode</span> = <span class="hljs-string">
       }
 
       // ---- "turn-key" layout ------------------------------------------------
+      /**
+       * One exchange in the turn-key layout, mirroring the real markup seen in a
+       * user diagnostic (Nov. 2026): display:contents wrappers, turn state,
+       * response body, assistant-message style, action bar outside the turn body.
+       */
       function turnKeyItem(key, prompt, replyHtml, replyId) {
         const item = document.createElement('div');
         item.dataset.turnKey = key;
+        const unit = `fallback-turn-${key}`;
+        const reply = replyId
+          ? `<div data-response-body="${replyId}"><div data-chatgpt-selection-message-id="${replyId}" class="group flex min-w-0 flex-col">` +
+            `<div data-markdown-text-style="assistant-message">${replyHtml}</div></div></div>`
+          : `<div class="streaming-reply"><div data-markdown-text-style="assistant-message">${replyHtml}</div></div>`;
         item.innerHTML =
-          `<div data-content-search-unit-key="c:${key}:user" data-chatgpt-search-message-ids="${key}">` +
-          `<div data-user-message-bubble="true"><div>${prompt}</div></div></div>` +
+          `<div data-content-search-turn-key="${unit}"><div class="flex flex-col gap-1.5">` +
+          `<div data-talvt-turn-state="${replyId ? 'complete' : 'streaming'}" class="group flex flex-col">` +
+          '<div data-spacing="activity">' +
+          '<div style="display:contents">' +
+          '<h4 class="sr-only" data-conversation-role="user">Vous avez dit :</h4>' +
+          `<div data-chatgpt-search-unit-key="${unit}:0:user" data-chatgpt-search-message-ids="${key}">` +
+          `<div data-content-search-unit-key="${unit}:0:user"><div>` +
+          `<div data-user-message-bubble="true"><div class="whitespace-pre-wrap">${prompt}</div></div>` +
+          '<div><button type="button" aria-label="Copier le message">⧉</button><button type="button" aria-label="Modifier le message">✎</button></div>' +
+          '</div></div></div></div>' +
+          '<div style="display:contents"><span hidden data-chatgpt-agent-turn-start></span>' +
+          `<div data-content-search-unit-key="${unit}:1:assistant" data-chatgpt-search-message-ids="${replyId ?? ''}">` +
           '<h4 class="sr-only" data-conversation-role="assistant">ChatGPT a dit :</h4>' +
+          reply +
+          '</div></div></div></div>' +
           (replyId
-            ? `<div data-content-search-unit-key="c:${key}:assistant" data-chatgpt-search-message-ids="${replyId}">` +
-              `<div data-chatgpt-selection-message-id="${replyId}">${replyHtml}</div></div>` +
-              '<div class="turn-action-controls"><button aria-label="Copier">⧉</button><button aria-label="Bonne réponse">👍</button></div>'
-            : `<div class="streaming-reply">${replyHtml}</div>`);
+            ? '<div class="mt-1.5 flex turn-action-controls"><div class="flex items-center gap-0.5">' +
+              '<button type="button" aria-label="Copier">⧉</button>' +
+              '<button type="button" aria-label="Évaluer la réponse">👍</button>' +
+              '<button type="button" aria-label="Lire à voix haute">🔊</button>' +
+              '<button type="button" aria-label="Partager">↗</button>' +
+              '<button type="button" aria-label="Autres actions">…</button>' +
+              '</div></div>'
+            : '') +
+          '</div></div>';
         return item;
       }
 
       function renderTurnKey() {
-        const rich = document.getElementById('rich-answer').innerHTML
-          .replace(/<span class="katex">[\s\S]*?<\/span><\/span>/, '<span data-math-source="\\frac{16}{9}">16/9</span>');
+        const rich = document.getElementById('rich-answer-turn-key').innerHTML;
         const target = document.createElement('div');
         target.setAttribute('data-chatgpt-conversation-selection-target', '');
         const list = document.createElement('div');
@@ -126,7 +165,7 @@ frame.<span class="hljs-property">layoutMode</span> = <span class="hljs-string">
         list.append(turnKeyItem('u1', 'Bonjour', '<p>Première réponse.</p>', 'a1'));
         if (cfg.streaming) {
           list.append(turnKeyItem('u2', '/figma Crée un écran de connexion', '<p>Écran de con</p>', null));
-          setStreaming(true);
+          if (cfg.stopButton !== false) setStreaming(true);
         } else {
           list.append(turnKeyItem('u2', '/figma Crée un écran de connexion', rich, 'a2'));
         }
