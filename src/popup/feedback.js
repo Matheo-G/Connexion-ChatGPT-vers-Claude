@@ -43,7 +43,7 @@ export async function runAction({ button, feedback, type, payload, onSuccess, on
   setBusy(button, true);
   showFeedback(feedback, 'info', t('testRunning'));
   try {
-    const result = await sendToBackground(type, payload, { timeout: Timeouts.DELIVERY });
+    const result = await sendToBackground(type, payload, { timeout: Timeouts.CALLER });
     showFeedback(feedback, 'success', onSuccess(result));
   } catch (error) {
     showFeedback(feedback, 'error', RouterError.from(error).userMessage);

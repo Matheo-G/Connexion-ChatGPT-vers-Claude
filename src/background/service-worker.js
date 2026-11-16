@@ -15,7 +15,7 @@ import { createLogger } from '../utils/logger.js';
 import { createMessageHandler } from '../services/messaging.js';
 import { backgroundHandlers } from './message-router.js';
 import { prepareTarget } from './target-session.js';
-import { ensureContentScript, pingTab } from './injector.js';
+import { ensureContentScript, pingTab, injectIntoOpenTabs } from './injector.js';
 import { getStatus } from './status.js';
 import { deliverText } from './delivery.js';
 import { readSource } from './source-session.js';
@@ -33,6 +33,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
 chrome.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
   const { version } = chrome.runtime.getManifest();
   log.info(`Installed (${reason})`, { version, previousVersion });
+  if (reason === 'install' || reason === 'update') injectIntoOpenTabs();
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -57,6 +58,7 @@ globalThis.aiRouter = Object.freeze({
   ensureContentScript,
   pingTab,
   getStatus,
+  injectIntoOpenTabs,
 });
 
 log.debug('Service worker evaluated');

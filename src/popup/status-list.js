@@ -14,18 +14,29 @@ const STATE_LABELS = {
   ready: 'stateReady',
   'not-ready': 'stateNotReady',
   'logged-out': 'stateLoggedOut',
+  unrecognized: 'stateUnrecognized',
   'no-tab': 'stateNoTab',
   checking: 'stateChecking',
 };
 
-/** @param {HTMLElement} list */
-export async function refreshStatus(list) {
+/**
+ * @param {HTMLElement} list
+ * @param {HTMLElement} [hint]  Shown when a page is not recognised.
+ */
+export async function refreshStatus(list, hint) {
   if (!list.children.length) render(list, listProviders().map((p) => ({ ...p, state: 'checking' })));
   try {
-    render(list, await sendToBackground(MessageType.GET_STATUS));
+    const providers = await sendToBackground(MessageType.GET_STATUS);
+    render(list, providers);
+    if (hint) renderHint(hint, providers.filter((p) => p.state === 'unrecognized'));
   } catch (error) {
     log.error('Status unavailable', error);
   }
+}
+
+function renderHint(hint, unrecognized) {
+  hint.hidden = !unrecognized.length;
+  if (unrecognized.length) hint.textContent = t('unrecognizedHint', unrecognized.map((p) => p.name).join(', '));
 }
 
 function render(list, providers) {

@@ -29,7 +29,7 @@ Aucun build, aucun droit administrateur.
 3. **Charger l'extension non empaquetée** → sélectionner ce dossier (celui qui contient `manifest.json`)
 4. Épingler l'icône « Mathéo AI Router » dans la barre d'outils
 
-Après une modification du code : bouton ⟳ sur la carte de l'extension, puis recharger les onglets ChatGPT / Claude.
+Après une modification du code : bouton ⟳ sur la carte de l'extension. Les onglets ChatGPT et Claude déjà ouverts reçoivent automatiquement la nouvelle version : inutile de les recharger.
 
 ## Développement (optionnel)
 

@@ -74,9 +74,18 @@ function detectLayout() {
   return null;
 }
 
+/**
+ * `recognized` is false on a conversation page where no known layout finds
+ * any answer: ChatGPT has probably changed its page (see selectors.js).
+ */
 export function describeLayout() {
   const found = detectLayout();
-  return { layout: found?.layout.name ?? null, answers: found?.replies.length ?? 0 };
+  const inConversation = /^\/(?:g\/[^/]+\/)?c\//.test(location.pathname);
+  return {
+    layout: found?.layout.name ?? null,
+    answers: found?.replies.length ?? 0,
+    recognized: Boolean(found) || !inConversation || isGenerating(),
+  };
 }
 
 export function isGenerating() {

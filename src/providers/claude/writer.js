@@ -54,11 +54,11 @@ function isRateLimited() {
 
 // ---- Steps --------------------------------------------------------------
 
-async function waitForEditor() {
+async function waitForEditor(timeout = Timeouts.ELEMENT) {
   if (isAuthPage()) throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, location.pathname);
 
   const { selector } = await waitForElement([...SELECTORS.editor, ...SELECTORS.loginForm], {
-    timeout: Timeouts.ELEMENT,
+    timeout,
     code: ErrorCode.EDITOR_NOT_FOUND,
   });
   if (SELECTORS.loginForm.includes(selector)) {
@@ -127,14 +127,14 @@ function pressEnter(editor) {
 // ---- Public API ---------------------------------------------------------
 
 /**
- * @param {{text: string, autoSend?: boolean}} payload
+ * @param {{text: string, autoSend?: boolean, elementTimeout?: number}} payload
  * @param {{log: ReturnType<import('../../utils/logger.js').createLogger>}} context
  * @returns {Promise<{insertedWith: string, sent: boolean, sentWith?: string, url: string}>}
  */
-export async function submit({ text, autoSend = true }, { log }) {
+export async function submit({ text, autoSend = true, elementTimeout }, { log }) {
   if (!hasText(text)) throw new RouterError(ErrorCode.NO_CONTENT, 'Empty text');
 
-  await waitForEditor();
+  await waitForEditor(elementTimeout);
   const insertedWith = await insertIntoEditor(findEditor, text, { isInserted: isInserted(text), log });
   log.info(`Text inserted (${insertedWith}, ${normalizeText(text).length} chars)`);
 
@@ -145,11 +145,19 @@ export async function submit({ text, autoSend = true }, { log }) {
   return { insertedWith, sent: true, sentWith, url: location.href };
 }
 
-/** Lightweight state report, used by PING and the popup. */
+/**
+ * Lightweight state report, used by PING and the popup.
+ * `recognized` is false when a logged-in page has no editor we can find:
+ * Claude has probably changed its page (see selectors.js).
+ */
 export function health() {
+  const loggedIn = !isAuthPage();
+  const editorFound = Boolean(findEditor());
+  const chatPage = /^\/(new|chat\/|project\/)/.test(location.pathname); // pages that must have an editor
   return {
-    loggedIn: !isAuthPage(),
-    editorFound: Boolean(findEditor()),
+    loggedIn,
+    editorFound,
     sendButtonFound: Boolean(findSendButton()),
+    recognized: !loggedIn || !chatPage || editorFound || document.readyState !== 'complete',
   };
 }

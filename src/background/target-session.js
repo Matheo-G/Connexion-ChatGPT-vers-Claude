@@ -11,7 +11,7 @@
  */
 
 import { getProvider } from '../providers/registry.js';
-import { DEFAULT_SETTINGS } from '../shared/defaults.js';
+import { DEFAULT_SETTINGS, scaleTimeouts } from '../shared/defaults.js';
 import { isSamePage } from '../utils/url.js';
 import { createLogger } from '../utils/logger.js';
 import {
@@ -31,6 +31,8 @@ const log = createLogger('target-session');
  * @property {boolean} [newConversation]  Defaults to the user setting.
  * @property {boolean} [activate=true]    Bring the tab to the front.
  * @property {number}  [sourceTabId]      Open new tabs next to this one.
+ * @property {boolean} [fresh=false]      Recovery: reload a new chat even if a tab looks ready.
+ * @property {ReturnType<typeof scaleTimeouts>} [timeouts]  Patience-scaled waits.
  *
  * @typedef {Object} PreparedTarget
  * @property {number} tabId
@@ -48,12 +50,18 @@ const log = createLogger('target-session');
 export async function prepareTarget(providerId, options = {}) {
   const startedAt = Date.now();
   const provider = getProvider(providerId, 'target');
-  const { newConversation = DEFAULT_SETTINGS.newConversation, activate = true, sourceTabId } = options;
+  const {
+    newConversation = DEFAULT_SETTINGS.newConversation,
+    activate = true,
+    sourceTabId,
+    fresh = false,
+    timeouts = scaleTimeouts(),
+  } = options;
 
-  const { tab, mode, loaded } = await acquireTab(provider, { newConversation, activate, sourceTabId });
+  const { tab, mode, loaded } = await acquireTab(provider, { newConversation, activate, sourceTabId, fresh, timeouts });
   if (activate) await focusTab(tab);
   await loaded;
-  const page = await ensureContentScript(tab.id);
+  const page = await ensureContentScript(tab.id, { timeout: timeouts.CONTENT_READY });
 
   const result = { tabId: tab.id, providerId, mode, page, durationMs: Date.now() - startedAt };
   log.info(`${provider.name} ready`, result);
@@ -64,26 +72,27 @@ export async function prepareTarget(providerId, options = {}) {
  * Chooses the tab and starts loading it. Returns without awaiting the load
  * so the tab can be focused immediately (instant visual feedback).
  */
-async function acquireTab(provider, { newConversation, activate, sourceTabId }) {
+async function acquireTab(provider, { newConversation, activate, sourceTabId, fresh, timeouts }) {
   const tabs = await queryTabs(provider.matches);
+  const best = pickBestTab(tabs);
+  const navigate = (tab) => ({
+    tab,
+    mode: 'navigated',
+    loaded: navigateAndWait(tab.id, provider.newChatUrl, timeouts.TAB_LOAD),
+  });
+  const reuse = (tab) => ({ tab, mode: 'reused', loaded: waitForTabComplete(tab.id, { timeout: timeouts.TAB_LOAD }) });
 
-  if (newConversation) {
+  if (fresh) {
+    // Recovery after a failed attempt: always load a brand-new chat page.
+    if (best) return navigate(best);
+  } else if (newConversation) {
     const onNewChat = pickBestTab(tabs.filter((t) => isSamePage(t.url, provider.newChatUrl)));
     if (onNewChat) return reuse(onNewChat);
-
-    const best = pickBestTab(tabs);
-    if (best) {
-      return { tab: best, mode: 'navigated', loaded: navigateAndWait(best.id, provider.newChatUrl) };
-    }
-  } else {
-    const best = pickBestTab(tabs);
-    if (best) return reuse(best);
+    if (best) return navigate(best);
+  } else if (best) {
+    return reuse(best);
   }
 
   const created = await createTab(provider.newChatUrl, { active: activate, sourceTabId });
-  return { tab: created, mode: 'created', loaded: waitForTabComplete(created.id) };
-}
-
-function reuse(tab) {
-  return { tab, mode: 'reused', loaded: waitForTabComplete(tab.id) };
+  return { tab: created, mode: 'created', loaded: waitForTabComplete(created.id, { timeout: timeouts.TAB_LOAD }) };
 }

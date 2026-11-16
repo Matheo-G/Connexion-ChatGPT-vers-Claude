@@ -13,6 +13,7 @@ import { Timeouts } from '../shared/defaults.js';
 import { sendToTab } from '../services/messaging.js';
 import { poll } from '../utils/async.js';
 import { createLogger } from '../utils/logger.js';
+import { listProviders } from '../providers/registry.js';
 
 const log = createLogger('injector');
 
@@ -41,6 +42,23 @@ export async function injectContentScript(tabId) {
       tabId,
     });
   }
+}
+
+/**
+ * After install/update, tabs already open have no (or an orphaned) content
+ * script: inject the fresh one everywhere, so the "Send" buttons come back
+ * without the user reloading anything. The new runtime replaces the
+ * orphaned one's UI (see content/runtime.js, teardown event).
+ * @returns {Promise<number>} number of tabs injected
+ */
+export async function injectIntoOpenTabs() {
+  const tabs = (await Promise.all(listProviders().map((p) => chrome.tabs.query({ url: p.matches })))).flat();
+  const results = await Promise.allSettled(
+    tabs.filter((tab) => tab.status === 'complete' && !tab.discarded).map((tab) => injectContentScript(tab.id)),
+  );
+  const injected = results.filter((r) => r.status === 'fulfilled').length;
+  log.info(`Content script injected into ${injected} open tab(s)`);
+  return injected;
 }
 
 /**

@@ -12,9 +12,10 @@ import { pingTab } from './injector.js';
  * @property {string} name
  * @property {readonly string[]} roles
  * @property {number} tabCount
- * @property {'ready' | 'logged-out' | 'not-ready' | 'no-tab'} state
+ * @property {'ready' | 'logged-out' | 'unrecognized' | 'not-ready' | 'no-tab'} state
  *   not-ready  = tab open but no content script answering (still loading, crashed…);
- *   logged-out = the adapter reports the login screen.
+ *   logged-out = the adapter reports the login screen;
+ *   unrecognized = the page loads but its structure is unknown (site redesign).
  */
 
 /** @returns {Promise<ProviderStatus[]>} */
@@ -38,5 +39,6 @@ async function getProviderStatus(provider) {
 function toState(tab, page) {
   if (!tab) return 'no-tab';
   if (!page) return 'not-ready';
-  return page.loggedIn === false ? 'logged-out' : 'ready';
+  if (page.loggedIn === false) return 'logged-out';
+  return page.recognized === false ? 'unrecognized' : 'ready';
 }

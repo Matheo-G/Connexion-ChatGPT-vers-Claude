@@ -31,6 +31,8 @@ export const DEFAULT_SETTINGS = Object.freeze({
   theme: 'auto',
   /** Keep a local history of sends (short preview only, never leaves the browser). */
   keepHistory: true,
+  /** 'normal' | 'patient' — 'patient' doubles every wait (slow connection / computer). */
+  patience: 'normal',
   /** Verbose console logs in every context. */
   debugMode: false,
 });
@@ -49,7 +51,25 @@ export const Timeouts = Object.freeze({
   SUBMIT: 40_000,
   /** Full delivery as seen by a caller: tab load + handshake + submit. */
   DELIVERY: 90_000,
+  /**
+   * How long a UI (button, popup) waits for the background's answer: an upper
+   * bound only — the background enforces the real (patience-scaled) timeouts.
+   */
+  CALLER: 200_000,
 });
+
+/** Multiplier applied to waits, per `patience` setting. */
+export const PATIENCE_FACTOR = Object.freeze({ normal: 1, patient: 2 });
+
+/**
+ * Timeouts adapted to the user's patience setting.
+ * @param {'normal' | 'patient'} [patience]
+ * @returns {typeof Timeouts}
+ */
+export function scaleTimeouts(patience = 'normal') {
+  const factor = PATIENCE_FACTOR[patience] ?? 1;
+  return Object.freeze(Object.fromEntries(Object.entries(Timeouts).map(([key, ms]) => [key, ms * factor])));
+}
 
 /** Max number of entries kept in history. */
 export const HISTORY_LIMIT = 50;
@@ -60,4 +80,5 @@ export const HISTORY_PREVIEW_LENGTH = 140;
 /** Allowed values of enumerated settings (validation). */
 export const SETTING_CHOICES = Object.freeze({
   theme: Object.freeze(['auto', 'light', 'dark']),
+  patience: Object.freeze(['normal', 'patient']),
 });

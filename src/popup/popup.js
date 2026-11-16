@@ -29,7 +29,7 @@ const setLabel = (id, text) => ($(id).querySelector('.button__label').textConten
 /** Context shared by the actions (filled in init). */
 let target = null;
 
-const refresh = () => refreshStatus($('provider-list'));
+const refresh = () => refreshStatus($('provider-list'), $('status-hint'));
 const seconds = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
 
 // ---- Actions ----------------------------------------------------------------
@@ -64,14 +64,18 @@ const TOOLS = {
       showPreview(answer.markdown);
       return t('readSourceResult', String(answer.length));
     }),
-  /** Anonymous structural snapshot (no conversation text) for troubleshooting. */
-  'diagnose-source': (b) =>
-    tool(b, MessageType.DIAGNOSE, { providerId: source.id }, (result) => {
-      showPreview(result.text); // also visible, in case the clipboard is refused
-      navigator.clipboard.writeText(result.text).catch(() => {});
-      return t('diagnosticCopied');
-    }),
+  /** Anonymous structural snapshots (no conversation text) for troubleshooting. */
+  'diagnose-source': (b) => diagnose(b, source.id),
+  'diagnose-target': (b) => diagnose(b, target.id),
 };
+
+function diagnose(button, providerId) {
+  return tool(button, MessageType.DIAGNOSE, { providerId }, (result) => {
+    showPreview(result.text); // also visible, in case the clipboard is refused
+    navigator.clipboard.writeText(result.text).catch(() => {});
+    return t('diagnosticCopied');
+  });
+}
 
 function showPreview(text) {
   $('preview-text').textContent = text;
@@ -106,6 +110,7 @@ function renderTexts() {
   setLabel('insert-test', t('actionInsertTest'));
   setLabel('read-source', t('actionReadSource', source.name));
   setLabel('diagnose-source', t('actionDiagnose', source.name));
+  setLabel('diagnose-target', t('actionDiagnose', target.name));
   setLabel('copy-preview', t('copyMarkdown'));
 }
 

@@ -56,13 +56,15 @@ function respond(url, control) {
   if (url.hostname !== 'claude.ai') {
     return withConfig(fs.readFileSync(path.join(FIXTURES, 'chatgpt.html'), 'utf8'), control.chatgpt);
   }
+  if (url.pathname !== '/favicon.ico') control.claudeLoads.push(url.pathname);
   if (url.pathname.startsWith('/login')) {
     return html(fs.readFileSync(path.join(FIXTURES, 'claude-login.html'), 'utf8'));
   }
   if (control.loggedOut) {
     return { status: 302, headers: { location: 'https://claude.ai/login' } };
   }
-  return withConfig(fs.readFileSync(path.join(FIXTURES, 'claude.html'), 'utf8'), control.fixture);
+  const fixture = control.fixtureQueue.length ? control.fixtureQueue.shift() : control.fixture;
+  return withConfig(fs.readFileSync(path.join(FIXTURES, 'claude.html'), 'utf8'), fixture);
 }
 
 const html = (body) => ({ contentType: 'text/html', body });
@@ -104,7 +106,8 @@ function startFixtureServer(control) {
  *   context: import('playwright').BrowserContext,
  *   sw: import('playwright').Worker,
  *   extensionId: string,
- *   control: { hang: RegExp | null, fixture: object, chatgpt: object, loggedOut: boolean },
+ *   control: { hang: RegExp | null, fixture: object, chatgpt: object, loggedOut: boolean,
+ *              fixtureQueue: object[], claudeLoads: string[] },
  *   sendMessage: (message: object) => Promise<any>,
  *   evalSW: (fn: Function, arg?: any) => Promise<any>,
  *   pagesOf: (host: string) => import('playwright').Page[],
@@ -121,9 +124,11 @@ async function launch() {
    *   hang      RegExp — matching requests are never answered;
    *   fixture   window.__FIXTURE__ of the Claude page (see fixtures/src/claude-composer.js);
    *   chatgpt   window.__FIXTURE__ of the ChatGPT page (see fixtures/chatgpt.html);
-   *   loggedOut every Claude page redirects to /login.
+   *   loggedOut every Claude page redirects to /login;
+   *   fixtureQueue  per-load fixtures for the next Claude pages (then `fixture`);
+   *   claudeLoads   paths of the Claude pages served so far (read-only log).
    */
-  const control = { hang: null, fixture: {}, chatgpt: {}, loggedOut: false };
+  const control = { hang: null, fixture: {}, chatgpt: {}, loggedOut: false, fixtureQueue: [], claudeLoads: [] };
   const server = await startFixtureServer(control);
   const { port } = server.address();
   const rules = HOSTS.map((host) => `MAP ${host}:443 127.0.0.1:${port}`).join(', ');

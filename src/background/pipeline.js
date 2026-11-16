@@ -15,7 +15,7 @@ import { MessageType, PipelineStep } from '../shared/message-types.js';
 import { RouterError, ErrorCode } from '../shared/errors.js';
 import { getWorkflow } from '../workflows/registry.js';
 import { getProvider } from '../providers/registry.js';
-import { DEFAULT_SETTINGS } from '../shared/defaults.js';
+import { DEFAULT_SETTINGS, scaleTimeouts } from '../shared/defaults.js';
 import { getSettings } from '../services/settings.js';
 import { addHistoryEntry, createEntry } from '../services/history.js';
 import { sendToTab, createRequestId } from '../services/messaging.js';
@@ -23,6 +23,7 @@ import { createLogger } from '../utils/logger.js';
 import { readSource } from './source-session.js';
 import { deliverText } from './delivery.js';
 import { focusTab, getTab } from './tab-manager.js';
+import { withKeepAlive } from './keepalive.js';
 
 const log = createLogger('pipeline');
 
@@ -52,7 +53,7 @@ export async function runPipeline(request = {}) {
   let settings = { ...DEFAULT_SETTINGS };
   try {
     settings = await getSettings();
-    const result = await execute(request, job, settings);
+    const result = await withKeepAlive(() => execute(request, job, settings));
     record(settings, job, { status: result.sent ? 'sent' : 'inserted', targetUrl: result.url });
     return result;
   } catch (error) {
@@ -87,6 +88,7 @@ async function execute(request, job, settings) {
     newConversation: options.newConversation,
     activate: true,
     sourceTabId: answer.tabId,
+    timeouts: scaleTimeouts(settings.patience),
     onStep: (step) => notify(job, step),
   });
 

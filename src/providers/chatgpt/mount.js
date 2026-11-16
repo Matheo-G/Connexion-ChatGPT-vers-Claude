@@ -20,10 +20,12 @@ import { t } from '../../utils/i18n.js';
 import { loadUiStyles, disposeShadowHosts } from '../../content/ui/shadow.js';
 import { createSendButton, BUTTON_MARKER } from '../../content/ui/send-button.js';
 import { showToast, disposeToasts } from '../../content/ui/toast.js';
-import { listAnswerTurns } from './reader.js';
+import { listAnswerTurns, describeLayout } from './reader.js';
 import { SELECTORS } from './selectors.js';
 
 const SCAN_DELAY = 150;
+/** Time given to ChatGPT to render a conversation before judging the page. */
+const RECOGNITION_GRACE = 8_000;
 
 const STEP_LABELS = {
   [PipelineStep.EXTRACTING]: 'stepExtracting',
@@ -84,7 +86,7 @@ export function createMounter({ log }) {
       const result = await sendToBackground(
         MessageType.ROUTE_REQUEST,
         { messageId, workflowId, trigger: 'button' },
-        { timeout: Timeouts.DELIVERY },
+        { timeout: Timeouts.CALLER },
       );
       button()?.setState('success', t(result.sent ? 'stateSent' : 'stateInserted'));
     } catch (error) {
@@ -136,7 +138,14 @@ export function createMounter({ log }) {
     observer = new MutationObserver(scheduleScan);
     observer.observe(document.body, { childList: true, subtree: true });
     scan();
+    setTimeout(warnIfUnrecognized, RECOGNITION_GRACE);
     log.debug('Send buttons active');
+  }
+
+  /** One console warning (visible without debug mode) to speed up support. */
+  function warnIfUnrecognized() {
+    if (describeLayout().recognized) return;
+    log.warn('Conversation not recognised: ChatGPT may have changed its page. Use the popup diagnostic.');
   }
 
   function stop() {

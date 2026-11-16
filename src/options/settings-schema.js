@@ -98,7 +98,19 @@ export const SETTINGS_SCHEMA = [
   {
     id: 'advanced',
     titleKey: 'optSectionAdvanced',
-    fields: [{ key: 'debugMode', type: 'toggle', labelKey: 'optDebugMode', hintKey: 'optDebugModeHint' }],
+    fields: [
+      {
+        key: 'patience',
+        type: 'segmented',
+        labelKey: 'optPatience',
+        hintKey: 'optPatienceHint',
+        choices: () => [
+          { value: 'normal', labelKey: 'patienceNormal' },
+          { value: 'patient', labelKey: 'patiencePatient' },
+        ],
+      },
+      { key: 'debugMode', type: 'toggle', labelKey: 'optDebugMode', hintKey: 'optDebugModeHint' },
+    ],
     actions: [{ id: 'reset-settings', labelKey: 'optReset', danger: true }],
   },
 ];

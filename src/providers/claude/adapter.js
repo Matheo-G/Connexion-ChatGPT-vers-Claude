@@ -5,6 +5,7 @@
 
 import { MessageType } from '../../shared/message-types.js';
 import { submit, health } from './writer.js';
+import { snapshot } from './diagnostics.js';
 
 /**
  * @param {{log: ReturnType<import('../../utils/logger.js').createLogger>}} context
@@ -16,6 +17,7 @@ export function createAdapter({ log }) {
     handlers: {
       [MessageType.TARGET_SUBMIT]: (payload) => submit(payload, { log }),
       [MessageType.TARGET_HEALTH]: () => health(),
+      [MessageType.PROVIDER_DIAGNOSE]: () => snapshot(),
     },
     destroy() {},
   };

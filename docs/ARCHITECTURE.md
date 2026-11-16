@@ -132,6 +132,20 @@ Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interf
 - **Thème** des pages de l'extension (`ui-kit/theme.js`) : système, clair ou sombre. Le bouton dans ChatGPT suit toujours le thème de ChatGPT.
 - **Styles partagés** : `ui-kit/controls.css` (boutons, interrupteurs, listes, sélecteur segmenté, touches).
 
+## Robustesse (étape 6)
+
+- **Nouvel essai automatique sans double envoi** (`background/delivery.js`). Une tentative qui échoue est refaite **une fois**, sur une page « nouvelle conversation » rechargée (`fresh`), seulement si l'on est **certain que rien n'est parti** :
+  - échec pendant la préparation de l'onglet ;
+  - éditeur introuvable ;
+  - insertion impossible.
+
+  Un délai dépassé *après* l'envoi n'est jamais refait. Une erreur permanente (déconnexion, limite d'usage) non plus. La règle est dans `isSafeToRetry`, testée unitairement. Ce mécanisme couvre aussi une conversation existante disparue.
+- **Keep-alive** (`background/keepalive.js`) : pendant un envoi, un appel d'API toutes les 20 s empêche Chrome de suspendre le service worker en plein travail.
+- **Patience** (réglage *Avancé*) : « Connexion lente » double tous les délais (`scaleTimeouts`), transmis jusqu'à la page Claude. Les interfaces attendent au plus `Timeouts.CALLER`.
+- **Mises à jour sans rechargement** : à l'installation ou à la mise à jour, le script est réinjecté dans les onglets ChatGPT et Claude ouverts (`injectIntoOpenTabs`). Le nouveau script remplace l'interface de l'ancien, devenu orphelin.
+- **Bilan de santé** : chaque adaptateur indique `recognized`. ChatGPT : une page de conversation sans mise en page connue. Claude : une page de conversation sans éditeur. La popup affiche alors « Page non reconnue » et invite à copier le diagnostic. Il en existe désormais un pour ChatGPT et un pour Claude.
+- **Fenêtre réduite** : elle est restaurée avant d'afficher l'onglet Claude.
+
 ## Tests
 
 - `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
@@ -163,6 +177,6 @@ Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interf
 | 3 | Adaptateur ChatGPT (extraction + Markdown) | ✅ |
 | 4 | Pipeline + bouton injecté → **V1** | ✅ |
 | 5 | Popup + options | ✅ |
-| 6 | Robustesse et cas limites | ⏳ |
-| 7 | Moteur de workflows | |
+| 6 | Robustesse et cas limites | ✅ |
+| 7 | Moteur de workflows | ⏳ |
 | 8 | Finitions + docs d'extension | |

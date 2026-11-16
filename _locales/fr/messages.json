@@ -372,5 +372,28 @@
         "content": "$1"
       }
     }
+  },
+  "stateUnrecognized": {
+    "message": "Page non reconnue"
+  },
+  "unrecognizedHint": {
+    "message": "$NAMES$ a peut-être changé sa page. Ouvrez « Outils de diagnostic », copiez le diagnostic et envoyez-le pour une mise à jour.",
+    "placeholders": {
+      "names": {
+        "content": "$1"
+      }
+    }
+  },
+  "optPatience": {
+    "message": "Patience"
+  },
+  "optPatienceHint": {
+    "message": "« Connexion lente » double tous les délais d'attente (chargement de Claude, envoi…)."
+  },
+  "patienceNormal": {
+    "message": "Normale"
+  },
+  "patiencePatient": {
+    "message": "Connexion lente"
   }
 }

@@ -31,10 +31,12 @@ export function pickBestTab(tabs) {
   return sorted[0] ?? null;
 }
 
-/** Brings a tab and its window to the front. */
+/** Brings a tab and its window to the front (restoring a minimised window). */
 export async function focusTab(tab) {
   await chrome.tabs.update(tab.id, { active: true });
-  await chrome.windows.update(tab.windowId, { focused: true });
+  const window = await chrome.windows.get(tab.windowId);
+  const restore = window.state === 'minimized' ? { state: 'normal' } : {};
+  await chrome.windows.update(tab.windowId, { ...restore, focused: true });
   log.debug('Focused tab', tab.id);
 }
 

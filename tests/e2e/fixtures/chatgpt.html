@@ -178,7 +178,11 @@ frame.layoutMode = <span>"VERTICAL"</span>;</code></pre></div></div><button aria
         document.body.append(cached);
       }
 
-      if (cfg.layout === 'turn-key') {
+      if (cfg.layout === 'unknown') {
+        // A future redesign: answers rendered with markers nobody knows yet.
+        thread.innerHTML = '<div data-future-turn="1"><div data-future-role="me">Bonjour</div>' +
+          '<div data-future-role="bot"><p>Réponse dans une mise en page inconnue.</p></div></div>';
+      } else if (cfg.layout === 'turn-key') {
         if (!cfg.empty) renderTurnKey();
       } else if (!cfg.empty) {
         addTurn('user', 'Bonjour', 'u1');
