@@ -19,10 +19,16 @@ import { ensureContentScript, pingTab } from './injector.js';
 import { getStatus } from './status.js';
 import { deliverText } from './delivery.js';
 import { readSource } from './source-session.js';
+import { runPipeline } from './pipeline.js';
+import { handleCommand } from './commands.js';
 
 const log = createLogger('service-worker');
 
 chrome.runtime.onMessage.addListener(createMessageHandler(backgroundHandlers));
+
+chrome.commands.onCommand.addListener((command, tab) => {
+  handleCommand(command, tab);
+});
 
 chrome.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
   const { version } = chrome.runtime.getManifest();
@@ -39,12 +45,15 @@ chrome.runtime.onStartup.addListener(() => {
  *   await aiRouter.prepareTarget('claude', { activate: false })
  *   await aiRouter.deliverText('claude', 'Bonjour', { autoSend: false })
  *   await aiRouter.readSource('chatgpt')
+ *   await aiRouter.runPipeline({ trigger: 'api' })   // latest ChatGPT answer → Claude
  *   await aiRouter.getStatus()
  */
 globalThis.aiRouter = Object.freeze({
   prepareTarget,
   deliverText,
   readSource,
+  runPipeline,
+  handleCommand,
   ensureContentScript,
   pingTab,
   getStatus,

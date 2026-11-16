@@ -158,5 +158,71 @@
   },
   "error_PROVIDER_NOT_FOUND": {
     "message": "Cette IA n'est pas prise en charge."
+  },
+  "commandSendLatest": {
+    "message": "Envoyer la dernière réponse de ChatGPT à Claude"
+  },
+  "sendButtonTitle": {
+    "message": "Envoyer cette réponse à $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "workflowMenuTitle": {
+    "message": "Choisir un workflow"
+  },
+  "workflowDefault": {
+    "message": "Envoyer tel quel"
+  },
+  "stepExtracting": {
+    "message": "Lecture…"
+  },
+  "stepTransforming": {
+    "message": "Préparation…"
+  },
+  "stepOpening": {
+    "message": "Ouverture…"
+  },
+  "stepWaiting": {
+    "message": "Chargement…"
+  },
+  "stepSubmitting": {
+    "message": "Envoi…"
+  },
+  "stateSent": {
+    "message": "Envoyé"
+  },
+  "stateInserted": {
+    "message": "Inséré"
+  },
+  "stateFailed": {
+    "message": "Échec"
+  },
+  "toastSent": {
+    "message": "Réponse envoyée à $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastInserted": {
+    "message": "Réponse insérée dans $NAME$ (non envoyée)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "toastRetry": {
+    "message": "Réessayer"
+  },
+  "toastDismiss": {
+    "message": "Fermer"
+  },
+  "error_BUSY": {
+    "message": "Un envoi est déjà en cours pour cette réponse."
   }
 }

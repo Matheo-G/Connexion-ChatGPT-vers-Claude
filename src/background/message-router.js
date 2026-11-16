@@ -10,6 +10,7 @@ import { getStatus } from './status.js';
 import { deliverText } from './delivery.js';
 import { readSource } from './source-session.js';
 import { diagnoseProvider } from './diagnostics.js';
+import { runPipeline } from './pipeline.js';
 
 const log = createLogger('router');
 
@@ -18,6 +19,10 @@ export const backgroundHandlers = {
   [MessageType.CONTENT_READY]: ({ providerId, url }, sender) => {
     log.debug('Content ready', { providerId, tabId: sender.tab?.id, url });
   },
+
+  /** From the "Send to Claude" button: the sender's tab is the source. */
+  [MessageType.ROUTE_REQUEST]: ({ messageId, workflowId, targetProviderId, trigger = 'button' }, sender) =>
+    runPipeline({ sourceTabId: sender.tab?.id, messageId, workflowId, targetProviderId, trigger }),
 
   [MessageType.OPEN_TARGET]: ({ providerId = 'claude', activate, newConversation }, sender) =>
     prepareTarget(providerId, { activate, newConversation, sourceTabId: sender.tab?.id }),

@@ -64,6 +64,16 @@ export const SELECTORS = Object.freeze({
     finished: /^(complete|completed|done|error|failed|stopped|cancell?ed|aborted)$/i,
   }),
 
+  /**
+   * Action bar under an answer (copy, rate, read aloud…), searched inside the
+   * answer's turn. The "Send to Claude" button is appended to it.
+   */
+  actionBar: [
+    '.turn-action-controls > div:has(> button)',
+    '.turn-action-controls',
+    'div:has(> button[data-testid="copy-turn-action-button"])',
+  ],
+
   /** Code blocks rendered without <pre> (turn-key layout). */
   codeBlocks: ['[data-code-block="true"]'],
 

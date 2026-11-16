@@ -10,31 +10,7 @@ const { launch } = require('./harness.cjs');
 
 let h;
 
-/** What the rich fixture answer must become. */
-const EXPECTED = [
-  '## Écran de connexion',
-  '',
-  'Voici un prompt **optimisé** pour *Figma*, avec `Auto Layout`. Source [Figma Help](https://help.figma.com).',
-  '',
-  '```javascript',
-  'const frame = figma.createFrame();',
-  'frame.layoutMode = "VERTICAL";',
-  '```',
-  '',
-  '- Champs',
-  '  - Email',
-  '  - Mot de passe',
-  '- Bouton **Continuer**',
-  '',
-  '| Élément | Espacement |',
-  '| --- | --- |',
-  '| Champ | 16 px |',
-  '| Bouton | 24 px |',
-  '',
-  'Ratio : $\\frac{16}{9}$',
-  '',
-  '> Garde une palette sobre.',
-].join('\n');
+const { EXPECTED } = require('./expected.cjs');
 
 before(async () => {
   h = await launch();

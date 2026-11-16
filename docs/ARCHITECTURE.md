@@ -101,6 +101,28 @@ Côté page (`providers/chatgpt/reader.js`) :
 
 `utils/html-to-markdown.js` (générique, testé unitairement) convertit le HTML rendu en Markdown : titres, gras/italique/barré, code inline, blocs de code avec langage (sans l'en-tête « Copier le code »), listes imbriquées et numérotées, citations, tableaux, liens sûrs, images http, maths KaTeX ou `data-math-source` (`$…$`, `$$…$$`), lignes de code de type CodeMirror. L'interface du site est ignorée : boutons, SVG, pastilles de citation, textes `sr-only`.
 
+## V1 : bouton, pipeline, raccourci (étape 4)
+
+**Pipeline** (`background/pipeline.js → runPipeline`) : Source → Workflow → Cible → Post-actions.
+
+1. `readSource` lit la réponse (dernière, ou celle du bouton cliqué) ;
+2. `workflow.transform({ text, prompt })` la prépare (`workflows/`, seul `default` pour l'instant) ;
+3. `deliverText` ouvre ou active Claude, insère et envoie ;
+4. retour éventuel sur ChatGPT (`returnToSource`).
+
+Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interface. Un même envoi ne peut pas tourner deux fois en parallèle (`BUSY`). Les réglages viennent de `services/settings.js` (stockage `sync`, toujours fusionné avec `DEFAULT_SETTINGS`).
+
+**Déclencheurs**
+
+- **Bouton** sous chaque réponse (`providers/chatgpt/mount.js`) → `ROUTE_REQUEST`. Un `MutationObserver` (anti-rebond de 150 ms) rescanne la page. Le scan est idempotent : un bouton par barre d'actions, recréé si React l'efface ou si le fil virtualisé démonte puis remonte un échange. Pas de bouton sur une réponse en cours d'écriture, puisque sa barre d'actions n'existe pas encore.
+- **Raccourci** `Alt+Maj+C` (`background/commands.js`, modifiable dans `chrome://extensions/shortcuts`) : dernière réponse de l'onglet ChatGPT actif, ou du plus pertinent.
+
+**Interface injectée** (`content/ui/`), dans un **Shadow DOM** : le CSS de la page et le nôtre ne se mélangent pas. Les design tokens sont réécrits de `:root` vers `:host`. Le thème suit celui de la page (`html.dark`).
+
+- `send-button.js` : bouton scindé « ➤ Claude | ▾ ». Le menu des workflows reste caché tant qu'il n'y en a qu'un. États `idle → busy (étape en cours) → success | error`.
+- `toast.js` : notifications en bas à droite, avec bouton « Réessayer » en cas d'erreur. Elles servent aussi aux envois lancés par le raccourci.
+- Si l'extension a été rechargée, l'ancien script de la page est orphelin. Le bouton propose alors de recharger la page au lieu d'échouer en silence.
+
 ## Tests
 
 - `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
@@ -130,8 +152,8 @@ Côté page (`providers/chatgpt/reader.js`) :
 | 1 | Messagerie + gestion des onglets + injection + handshake | ✅ |
 | 2 | Adaptateur Claude (insertion + envoi) | ✅ |
 | 3 | Adaptateur ChatGPT (extraction + Markdown) | ✅ |
-| 4 | Pipeline + bouton injecté → **V1** | ⏳ |
-| 5 | Popup + options | |
+| 4 | Pipeline + bouton injecté → **V1** | ✅ |
+| 5 | Popup + options | ⏳ |
 | 6 | Robustesse et cas limites | |
 | 7 | Moteur de workflows | |
 | 8 | Finitions + docs d'extension | |

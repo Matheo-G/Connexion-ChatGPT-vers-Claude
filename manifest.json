@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "AI Router",
   "description": "__MSG_extDescription__",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "default_locale": "fr",
   "minimum_chrome_version": "116",
   "background": {
@@ -39,6 +39,14 @@
     "32": "src/assets/icons/icon-32.png",
     "48": "src/assets/icons/icon-48.png",
     "128": "src/assets/icons/icon-128.png"
+  },
+  "commands": {
+    "send-latest-answer": {
+      "suggested_key": {
+        "default": "Alt+Shift+C"
+      },
+      "description": "__MSG_commandSendLatest__"
+    }
   },
   "permissions": [
     "storage",

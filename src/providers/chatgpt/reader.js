@@ -123,6 +123,22 @@ function toMarkdown(reply, layout) {
   });
 }
 
+/**
+ * Every rendered exchange holding an answer, with the id of its (last)
+ * answer block — where the "Send to Claude" buttons go.
+ * @returns {{turn: Element, messageId: string | null}[]}
+ */
+export function listAnswerTurns() {
+  const found = detectLayout();
+  if (!found) return [];
+  const byTurn = new Map();
+  for (const reply of found.replies) {
+    const turn = reply.closest(found.layout.turn) ?? reply;
+    byTurn.set(turn, reply.getAttribute(found.layout.replyIdAttribute)); // last one wins
+  }
+  return [...byTurn].map(([turn, messageId]) => ({ turn, messageId }));
+}
+
 // ---- Public API ---------------------------------------------------------------
 
 /**

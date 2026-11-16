@@ -30,6 +30,9 @@ export const ErrorCode = Object.freeze({
   INSERT_FAILED: 'INSERT_FAILED',
   SEND_FAILED: 'SEND_FAILED',
 
+  // Pipeline
+  BUSY: 'BUSY',
+
   // Registries
   WORKFLOW_NOT_FOUND: 'WORKFLOW_NOT_FOUND',
   PROVIDER_NOT_FOUND: 'PROVIDER_NOT_FOUND',

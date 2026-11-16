@@ -6,7 +6,7 @@
  * by the popup diagnostic in the meantime.
  */
 
-import { MessageType } from '../shared/message-types.js';
+import { MessageType, PipelineStep } from '../shared/message-types.js';
 import { RouterError, ErrorCode } from '../shared/errors.js';
 import { DEFAULT_SETTINGS, Timeouts } from '../shared/defaults.js';
 import { sendToTab } from '../services/messaging.js';
@@ -17,7 +17,11 @@ import { prepareTarget } from './target-session.js';
 const log = createLogger('delivery');
 
 /**
- * @typedef {import('./target-session.js').PrepareOptions & {autoSend?: boolean}} DeliveryOptions
+ * @typedef {import('./target-session.js').PrepareOptions & {
+ *   autoSend?: boolean,
+ *   onStep?: (step: string) => void,
+ * }} DeliveryOptions
+ *   onStep: progress callback (PipelineStep values), used by the pipeline.
  *
  * @param {string} providerId
  * @param {string} text
@@ -25,9 +29,11 @@ const log = createLogger('delivery');
  */
 export async function deliverText(providerId, text, options = {}) {
   if (!hasText(text)) throw new RouterError(ErrorCode.NO_CONTENT, 'Nothing to deliver');
-  const { autoSend = DEFAULT_SETTINGS.autoSend, ...prepareOptions } = options;
+  const { autoSend = DEFAULT_SETTINGS.autoSend, onStep = () => {}, ...prepareOptions } = options;
 
+  onStep(PipelineStep.OPENING_TARGET);
   const target = await prepareTarget(providerId, prepareOptions);
+  onStep(PipelineStep.SUBMITTING);
   const result = await sendToTab(
     target.tabId,
     MessageType.TARGET_SUBMIT,
