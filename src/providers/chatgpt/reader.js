@@ -120,7 +120,20 @@ function findById(messageId, found) {
 /** Last user prompt located before `reply` in the page. */
 function promptFor(reply, layout) {
   const prompts = uniqueBlocks(renderedMatches(layout.prompt), '').filter((p) => precedes(p, reply));
-  return prompts.at(-1)?.textContent.trim() ?? '';
+  const bubble = prompts.at(-1);
+  return bubble ? promptText(bubble) : '';
+}
+
+/**
+ * Text of the user's message. Links displayed with a shortened label keep
+ * their real address only in `href`: append those, so links are never lost.
+ */
+function promptText(bubble) {
+  const text = bubble.textContent.trim();
+  const hidden = [...bubble.querySelectorAll('a[href^="http"]')]
+    .map((a) => a.href)
+    .filter((href) => !text.includes(href));
+  return [text, ...new Set(hidden)].join(' ').trim();
 }
 
 function toMarkdown(reply, layout) {

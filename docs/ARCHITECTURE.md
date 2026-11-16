@@ -167,6 +167,8 @@ Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source
 
 **Interface** : le bouton affiche un badge (`/figma`) quand une commande est détectée. Le menu ▾ (`content/ui/workflow-menu.js`) est rendu dans un calque séparé au niveau de `<body>`, pour ne jamais être coupé par la mise en page de ChatGPT. Il suit le bouton au défilement et se manipule au clavier.
 
+**Liens de votre message** : votre message à ChatGPT n'est pas transmis (c'est la réponse qui compte), mais **ses liens le sont toujours** (`utils/links.js`, `linksOf`). ChatGPT les recopie rarement. Le lecteur récupère aussi l'adresse réelle des liens affichés en raccourci (`href`). Pour `/figma`, un lien Figma devient **le fichier de travail** : travailler dans ce fichier et sur le cadre `node-id`, réutiliser ses styles et composants, ne pas créer de nouveau fichier.
+
 **Consignes personnelles** par workflow : saisies dans les réglages, stockées dans `chrome.storage.local` (`services/workflow-notes.js`, 2 000 caractères maximum chacune), ajoutées en fin de prompt.
 
 ## Tests

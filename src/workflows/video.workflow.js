@@ -3,7 +3,7 @@
  * Higgsfield (shot list, camera, lighting, style), prompts in English.
  */
 
-import { composePrompt } from './prompt-kit.js';
+import { composePrompt, linksOf } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -12,7 +12,7 @@ export default Object.freeze({
   labelKey: 'workflowVideo',
   label: 'Vidéo Higgsfield',
   icon: 'video',
-  transform: ({ text, notes }) =>
+  transform: ({ text, prompt, notes }) =>
     composePrompt({
       intro:
         "Tu es réalisateur et prompt engineer spécialisé en génération vidéo par IA (Higgsfield). Transforme l'idée ci-dessous en prompts prêts à générer.",
@@ -38,5 +38,6 @@ export default Object.freeze({
       contentLabel: 'Idée de vidéo (préparée avec ChatGPT)',
       content: text,
       notes,
+      links: linksOf(prompt),
     }),
 });

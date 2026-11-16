@@ -24,6 +24,8 @@ Commencez votre message à ChatGPT par une commande, et la réponse partira vers
 | `/job` | Prépare une candidature (analyse, lettre, entretien) |
 | `/mail` | Rédige un e-mail prêt à envoyer |
 
+Les **liens** de votre message (par exemple un lien Figma) sont toujours transmis à Claude. Avec `/figma`, Claude travaille directement dans le fichier indiqué.
+
 La flèche **▾** du bouton permet de choisir un autre workflow pour une réponse. Dans les réglages, vous pouvez ajouter vos **consignes personnelles** à chaque workflow. Pour créer un nouveau workflow, voir [docs/ADD_A_WORKFLOW.md](docs/ADD_A_WORKFLOW.md).
 
 La **popup** (icône de l'extension) propose aussi l'envoi de la dernière réponse en un clic, l'état des connexions et vos derniers envois. Les **réglages** (roue dentée) permettent de choisir :

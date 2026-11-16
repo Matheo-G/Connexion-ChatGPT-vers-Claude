@@ -19,6 +19,7 @@
     streaming  the last answer is being written; finishes after `streamMs`
                (omit streamMs to stream forever)
     stopButton false: (turn-key) no stop button, only the turn state says "streaming"
+    prompt     (turn-key) HTML of the user's second message (default: "/figma Crée…")
     split      the last turn holds two assistant messages (around a tool call)
 -->
 <html lang="fr">
@@ -167,7 +168,7 @@ frame.layoutMode = <span>"VERTICAL"</span>;</code></pre></div></div><button aria
           list.append(turnKeyItem('u2', '/figma Crée un écran de connexion', '<p>Écran de con</p>', null));
           if (cfg.stopButton !== false) setStreaming(true);
         } else {
-          list.append(turnKeyItem('u2', '/figma Crée un écran de connexion', rich, 'a2'));
+          list.append(turnKeyItem('u2', cfg.prompt ?? '/figma Crée un écran de connexion', rich, 'a2'));
         }
         if (cfg.duplicate) thread.append(target.cloneNode(true));
 

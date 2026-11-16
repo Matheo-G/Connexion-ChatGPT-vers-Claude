@@ -154,3 +154,20 @@ test('history shows which workflow was used', async () => {
   await meta.waitFor();
   assert.match(await meta.textContent(), /^Envoyé · Claude · Design Figma · /);
 });
+
+test('a Figma link in the prompt reaches Claude, even when ChatGPT shortens it', async () => {
+  const figma = 'https://www.figma.com/design/AbC123xyz/App-mobile?node-id=12-345';
+  h.control.chatgpt = {
+    layout: 'turn-key',
+    // Shortened label, full address only in href — plus a plain-text link.
+    prompt: `/figma Améliore <a href="${figma}">figma.com</a> selon https://exemple.fr/brief.`,
+  };
+  const page = await openChatGPT();
+  assert.equal(await badgeOf(page, 1).textContent(), '/figma');
+  await page.locator(`${BUTTON} .main`).nth(1).click();
+  const sent = await receivedByClaude();
+  assert.match(sent, /Travaille dans le fichier Figma existant/);
+  assert.ok(sent.includes(figma), 'full Figma address forwarded');
+  assert.ok(sent.includes('https://exemple.fr/brief'), 'other link forwarded, without the final dot');
+  assert.ok(!sent.includes('https://exemple.fr/brief.'), 'sentence punctuation not glued to the link');
+});

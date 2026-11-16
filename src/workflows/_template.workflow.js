@@ -8,7 +8,7 @@
  * This file is NOT registered: it is only a starting point.
  */
 
-import { composePrompt } from './prompt-kit.js';
+import { composePrompt, linksOf } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -26,5 +26,6 @@ export default Object.freeze({
       contentLabel: 'Contenu (préparé avec ChatGPT)',
       content: text,
       notes,
+      links: linksOf(prompt), // links from the user's message, always forwarded
     }),
 });

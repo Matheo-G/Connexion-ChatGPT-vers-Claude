@@ -2,7 +2,7 @@
  * @file /job — job search: tailor an application to an offer, honestly.
  */
 
-import { composePrompt } from './prompt-kit.js';
+import { composePrompt, linksOf } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -11,7 +11,7 @@ export default Object.freeze({
   labelKey: 'workflowJob',
   label: "Recherche d'emploi",
   icon: 'briefcase',
-  transform: ({ text, notes }) =>
+  transform: ({ text, prompt, notes }) =>
     composePrompt({
       intro:
         'Tu es coach carrière et recruteur expérimenté. Aide-moi à préparer une candidature solide à partir des éléments ci-dessous.',
@@ -36,5 +36,6 @@ export default Object.freeze({
       contentLabel: 'Éléments (préparés avec ChatGPT)',
       content: text,
       notes,
+      links: linksOf(prompt),
     }),
 });

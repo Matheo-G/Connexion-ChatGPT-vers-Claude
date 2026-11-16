@@ -87,3 +87,61 @@ test('notes are sanitised: strings only, empty dropped, length capped', () => {
   assert.equal(clean.video.length, NOTES_MAX_LENGTH);
   assert.deepEqual(sanitizeNotes(null), {});
 });
+
+// ---- Links from the user's message ----------------------------------------
+
+import { extractUrls, isFigmaUrl } from '../src/utils/links.js';
+
+const FIGMA = 'https://www.figma.com/design/AbC123xyz/App-mobile?node-id=12-345&t=k9';
+
+test('extractUrls: trailing punctuation dropped, duplicates removed, order kept', () => {
+  const text = `Voici (${FIGMA}). Et https://exemple.fr/doc, puis https://exemple.fr/doc ! Sans http rien.`;
+  assert.deepEqual(extractUrls(text), [FIGMA, 'https://exemple.fr/doc']);
+  assert.deepEqual(extractUrls('https://fr.wikipedia.org/wiki/Test_(informatique) ok'), [
+    'https://fr.wikipedia.org/wiki/Test_(informatique)',
+  ]);
+  assert.deepEqual(extractUrls(''), []);
+  assert.deepEqual(extractUrls(undefined), []);
+});
+
+test('isFigmaUrl recognises Figma documents only', () => {
+  assert.ok(isFigmaUrl(FIGMA));
+  assert.ok(isFigmaUrl('https://figma.com/board/Xy/Board'));
+  assert.ok(isFigmaUrl('https://www.figma.com/file/Xy/Old-style'));
+  assert.ok(!isFigmaUrl('https://www.figma.com/pricing'));
+  assert.ok(!isFigmaUrl('https://figma.com.evil.io/design/Xy'));
+  assert.ok(!isFigmaUrl('pas une url'));
+});
+
+test('/figma with a Figma link: work IN that file, link kept exactly', () => {
+  const out = getWorkflow('figma').transform({ text: ANSWER, prompt: `/figma Améliore cet écran ${FIGMA}` });
+  assert.match(out, /Travaille dans le fichier Figma existant/);
+  assert.match(out, /ne crée pas de nouveau fichier/);
+  assert.ok(out.includes(`Fichier Figma de travail :\n- ${FIGMA}`));
+  assert.match(out, /node-id/);
+  assert.ok(out.includes(ANSWER));
+});
+
+test('/figma without link keeps the "create" instruction', () => {
+  const out = getWorkflow('figma').transform({ text: ANSWER, prompt: '/figma Crée un écran' });
+  assert.match(out, /Réalise dans Figma le design/);
+  assert.doesNotMatch(out, /Fichier Figma de travail/);
+});
+
+test('every workflow forwards the links of the user message', () => {
+  const prompt = `Regarde https://exemple.fr/brief et ${FIGMA}`;
+  for (const workflow of listWorkflows()) {
+    const out = workflow.transform({ text: ANSWER, prompt });
+    assert.ok(out.includes('https://exemple.fr/brief'), `${workflow.id} forwards links`);
+    assert.ok(out.includes(FIGMA), `${workflow.id} forwards the Figma link`);
+  }
+});
+
+test('default workflow only adds links the answer does not already contain', () => {
+  const withLink = `${ANSWER}\n\nVoir https://exemple.fr/brief`;
+  assert.equal(getWorkflow('default').transform({ text: withLink, prompt: 'cf https://exemple.fr/brief' }), withLink);
+  assert.match(
+    getWorkflow('default').transform({ text: ANSWER, prompt: 'cf https://exemple.fr/brief' }),
+    /---\n\nLiens fournis dans ma demande :\n- https:\/\/exemple\.fr\/brief$/,
+  );
+});

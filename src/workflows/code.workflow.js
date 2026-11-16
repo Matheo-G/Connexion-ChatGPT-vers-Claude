@@ -2,7 +2,7 @@
  * @file /code — development task: implement, fix or review code from the brief.
  */
 
-import { composePrompt } from './prompt-kit.js';
+import { composePrompt, linksOf } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -11,7 +11,7 @@ export default Object.freeze({
   labelKey: 'workflowCode',
   label: 'Développement',
   icon: 'code',
-  transform: ({ text, notes }) =>
+  transform: ({ text, prompt, notes }) =>
     composePrompt({
       intro:
         'Tu es ingénieur logiciel senior. Réalise la tâche de développement décrite ci-dessous avec un code propre, lisible et prêt pour la production.',
@@ -37,5 +37,6 @@ export default Object.freeze({
       contentLabel: 'Demande (préparée avec ChatGPT)',
       content: text,
       notes,
+      links: linksOf(prompt),
     }),
 });
