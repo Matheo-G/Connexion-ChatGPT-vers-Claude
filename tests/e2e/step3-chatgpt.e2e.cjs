@@ -90,12 +90,11 @@ test('no ChatGPT tab → SOURCE_UNAVAILABLE', async () => {
 
 test('popup "read" shows the Markdown preview', async () => {
   await openChatGPT();
-  const popup = await h.context.newPage();
-  await popup.goto(`chrome-extension://${h.extensionId}/src/popup/popup.html`);
+  const popup = await h.openPopup({ tools: true });
   await popup.click('#read-source');
-  await popup.locator('#feedback[data-tone="success"]').waitFor();
+  await popup.locator('#tools-feedback[data-tone="success"]').waitFor();
 
-  assert.equal(await popup.textContent('#feedback'), `${EXPECTED.length} caractères lus`);
+  assert.equal(await popup.textContent('#tools-feedback'), `${EXPECTED.length} caractères lus`);
   assert.equal(await popup.textContent('#preview-text'), EXPECTED);
   await popup.close();
 });
@@ -144,10 +143,9 @@ test('turn-key layout while writing → STILL_GENERATING, never the previous ans
 
 test('popup diagnostic: layout and markers, without any conversation text', async () => {
   await openChatGPT({ layout: 'turn-key' });
-  const popup = await h.context.newPage();
-  await popup.goto(`chrome-extension://${h.extensionId}/src/popup/popup.html`);
+  const popup = await h.openPopup({ tools: true });
   await popup.click('#diagnose-source');
-  await popup.locator('#feedback[data-tone="success"]').waitFor();
+  await popup.locator('#tools-feedback[data-tone="success"]').waitFor();
 
   const text = await popup.textContent('#preview-text');
   assert.match(text, /Layout reconnu : turn-key — réponses : 2/);

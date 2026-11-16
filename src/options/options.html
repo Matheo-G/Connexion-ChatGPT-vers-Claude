@@ -6,21 +6,26 @@
     <title>Réglages · Mathéo AI Router</title>
     <link rel="stylesheet" href="../ui-kit/tokens.css" />
     <link rel="stylesheet" href="../ui-kit/base.css" />
+    <link rel="stylesheet" href="../ui-kit/controls.css" />
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <main class="options fade-in">
-      <header class="brand">
-        <span class="brand__mark" data-icon="logo"></span>
-        <div>
-          <h1 class="brand__name" data-i18n="extName">Mathéo AI Router</h1>
-          <p class="brand__subtitle" data-i18n="optionsTitle">Réglages</p>
+      <header class="options__header">
+        <div class="brand">
+          <span class="brand__mark" data-icon="logo"></span>
+          <div>
+            <h1 class="brand__name" data-i18n="extName">Mathéo AI Router</h1>
+            <p class="brand__subtitle" data-i18n="optionsSubtitle">Réglages de l'extension</p>
+          </div>
         </div>
+        <p class="saved" id="saved" role="status" aria-live="polite">
+          <span data-icon="check" data-icon-size="14"></span><span data-i18n="saved">Enregistré</span>
+        </p>
       </header>
 
-      <section class="card">
-        <p class="muted">Les réglages arrivent à l'étape 5.</p>
-      </section>
+      <!-- Sections are rendered from settings-schema.js -->
+      <div class="sections" id="sections"></div>
 
       <footer class="muted" id="version"></footer>
     </main>

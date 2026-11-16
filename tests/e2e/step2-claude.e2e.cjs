@@ -150,10 +150,9 @@ test('editor never appears → EDITOR_NOT_FOUND', async () => {
 });
 
 test('popup "insert test text" fills Claude without sending', async () => {
-  const popup = await h.context.newPage();
-  await popup.goto(`chrome-extension://${h.extensionId}/src/popup/popup.html`);
+  const popup = await h.openPopup({ tools: true });
   await popup.click('#insert-test');
-  await popup.locator('#feedback[data-tone="success"]').waitFor({ timeout: 20_000 });
+  await popup.locator('#tools-feedback[data-tone="success"]').waitFor({ timeout: 20_000 });
 
   assert.match(await editorText(), /Test Mathéo AI Router/);
   assert.deepEqual(await sentMessages(), []);

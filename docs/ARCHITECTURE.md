@@ -123,6 +123,15 @@ Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interf
 - `toast.js` : notifications en bas à droite, avec bouton « Réessayer » en cas d'erreur. Elles servent aussi aux envois lancés par le raccourci.
 - Si l'extension a été rechargée, l'ancien script de la page est orphelin. Le bouton propose alors de recharger la page au lieu d'échouer en silence.
 
+## Réglages, historique, popup (étape 5)
+
+- **Réglages** (`services/settings.js`) : `chrome.storage.sync`, donc ils suivent le profil Chrome. Toute lecture passe par `sanitizeSettings` : clés inconnues ignorées, mauvais types et valeurs hors liste remplacés par les valeurs par défaut. Une donnée corrompue ne peut donc jamais atteindre le code. `onSettingsChanged` synchronise toutes les pages ouvertes.
+- **Page de réglages** générée depuis `options/settings-schema.js`. Ajouter un réglage revient à mettre sa valeur par défaut dans `shared/defaults.js` et à ajouter une ligne au schéma (types `toggle`, `select`, `segmented`). Enregistrement immédiat (« Enregistré ✓ »). Les actions destructives (effacer l'historique, réinitialiser) demandent un second clic, sans boîte de dialogue bloquante.
+- **Historique** (`services/history.js`) : `chrome.storage.local`, 50 entrées maximum. On ne garde qu'un **aperçu de 140 caractères**, jamais la réponse complète. Désactivable. Les écritures sont sérialisées, et une erreur d'historique ne fait jamais échouer un envoi.
+- **Popup** : envoi rapide de la dernière réponse en tête, connexions, 5 derniers envois (avec lien vers la conversation Claude), outils de diagnostic repliés. Elle est découpée en modules : `feedback.js`, `status-list.js`, `history-list.js`.
+- **Thème** des pages de l'extension (`ui-kit/theme.js`) : système, clair ou sombre. Le bouton dans ChatGPT suit toujours le thème de ChatGPT.
+- **Styles partagés** : `ui-kit/controls.css` (boutons, interrupteurs, listes, sélecteur segmenté, touches).
+
 ## Tests
 
 - `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
@@ -153,7 +162,7 @@ Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interf
 | 2 | Adaptateur Claude (insertion + envoi) | ✅ |
 | 3 | Adaptateur ChatGPT (extraction + Markdown) | ✅ |
 | 4 | Pipeline + bouton injecté → **V1** | ✅ |
-| 5 | Popup + options | ⏳ |
-| 6 | Robustesse et cas limites | |
+| 5 | Popup + options | ✅ |
+| 6 | Robustesse et cas limites | ⏳ |
 | 7 | Moteur de workflows | |
 | 8 | Finitions + docs d'extension | |

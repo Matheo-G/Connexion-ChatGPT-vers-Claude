@@ -12,6 +12,14 @@ Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic
 
 Raccourci clavier : **Alt+Maj+C**, depuis n'importe quel onglet. Il est modifiable dans `chrome://extensions/shortcuts`.
 
+La **popup** (icône de l'extension) propose aussi l'envoi de la dernière réponse en un clic, l'état des connexions et vos derniers envois. Les **réglages** (roue dentée) permettent de choisir :
+- nouvelle conversation ou conversation existante ;
+- envoi automatique ou simple insertion ;
+- retour sur ChatGPT après l'envoi ;
+- le thème ;
+- l'historique ;
+- le mode debug.
+
 ## Installation (mode développeur)
 
 Aucun build, aucun droit administrateur.
@@ -34,7 +42,7 @@ npm run test:e2e  # tests de bout en bout dans Chromium (nécessite Playwright)
 npm run icons     # régénère les icônes PNG (nécessite Playwright)
 ```
 
-Logs détaillés : activer le mode debug (réglage `debugMode`, page d'options à l'étape 5), puis ouvrir la console du service worker (`chrome://extensions` → « service worker ») ou celle de la page.
+Logs détaillés : activer le **Mode debug** dans les réglages, puis ouvrir la console du service worker (`chrome://extensions` → « service worker ») ou celle de la page.
 
 ## Documentation
 

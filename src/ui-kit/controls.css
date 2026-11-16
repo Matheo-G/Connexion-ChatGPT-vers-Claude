@@ -1,0 +1,232 @@
+/*
+ * Shared form controls and buttons for extension pages (popup, options).
+ * Built on the design tokens; accessible (real inputs, visible focus).
+ */
+
+/* ---- Buttons ------------------------------------------------------------ */
+
+
+.icon-button,
+.button {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.icon-button:focus-visible,
+.button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.icon-button:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.button__icon {
+  display: grid;
+}
+
+.button--primary {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.button--primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.button--ghost {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.button--ghost:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.button--link {
+  min-height: 28px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+.button--link:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.button[aria-busy='true'] .button__icon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.button--danger {
+  background: transparent;
+  color: var(--color-danger);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
+}
+
+.button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+
+.button--danger[data-confirm='true'] {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+/* ---- Switch (input[type=checkbox][role=switch]) ------------------------ */
+
+.switch {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  margin: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background var(--duration-base) var(--ease-out);
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.switch:checked {
+  background: var(--color-accent);
+}
+
+.switch:checked::after {
+  transform: translateX(16px);
+}
+
+.switch:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Select ------------------------------------------------------------ */
+
+.select {
+  min-width: 180px;
+  height: 34px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- Segmented control (radio group) ---------------------------------- */
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label {
+  padding: 6px 12px;
+  border-radius: calc(var(--radius-md) - 3px);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.segmented input:checked + label {
+  background: var(--color-bg);
+  color: var(--color-text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.segmented input:focus-visible + label {
+  box-shadow: var(--focus-ring);
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  border: 1px solid var(--color-border);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  font: 500 var(--text-xs) / 1.4 var(--font-mono);
+  color: var(--color-text);
+}

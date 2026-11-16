@@ -6,6 +6,7 @@
     <title>Mathéo AI Router</title>
     <link rel="stylesheet" href="../ui-kit/tokens.css" />
     <link rel="stylesheet" href="../ui-kit/base.css" />
+    <link rel="stylesheet" href="../ui-kit/controls.css" />
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -19,44 +20,62 @@
         <button class="icon-button" id="open-options" type="button" data-icon="settings" aria-label="Réglages"></button>
       </header>
 
+      <!-- Main action -->
+      <section class="section">
+        <button class="button button--primary button--hero" id="quick-send" type="button" data-action>
+          <span class="button__icon" data-icon="send"></span>
+          <span class="button__label"></span>
+        </button>
+        <p class="hint" id="shortcut-hint"></p>
+        <p class="feedback" id="feedback" role="status" hidden></p>
+      </section>
+
       <section class="section">
         <h2 class="section__title" data-i18n="popupConnections">Connexions</h2>
         <ul class="card provider-list" id="provider-list" aria-live="polite"></ul>
       </section>
 
       <section class="section">
-        <h2 class="section__title" data-i18n="popupDiagnostics">Diagnostic</h2>
-        <div class="actions">
-          <button class="button button--primary" id="test-target" type="button">
-            <span class="button__icon" data-icon="refresh"></span>
-            <span class="button__label"></span>
-          </button>
-          <button class="button button--ghost" id="open-target" type="button">
-            <span class="button__icon" data-icon="externalLink"></span>
-            <span class="button__label"></span>
-          </button>
-          <button class="button button--ghost button--wide" id="insert-test" type="button">
-            <span class="button__icon" data-icon="send"></span>
-            <span class="button__label"></span>
-          </button>
-          <button class="button button--ghost button--wide" id="read-source" type="button">
-            <span class="button__icon" data-icon="sparkles"></span>
-            <span class="button__label"></span>
-          </button>
-          <button class="button button--link button--wide" id="diagnose-source" type="button">
-            <span class="button__icon" data-icon="code" data-icon-size="14"></span>
-            <span class="button__label"></span>
-          </button>
-        </div>
-        <p class="feedback" id="feedback" role="status" hidden></p>
-        <div class="preview" id="preview" hidden>
-          <pre class="preview__text" id="preview-text" tabindex="0"></pre>
-          <button class="button button--ghost preview__copy" id="copy-preview" type="button">
-            <span class="button__icon" data-icon="copy" data-icon-size="14"></span>
-            <span class="button__label"></span>
-          </button>
-        </div>
+        <h2 class="section__title" data-i18n="popupHistory">Derniers envois</h2>
+        <ul class="card history" id="history-list" aria-live="polite"></ul>
       </section>
+
+      <!-- Diagnostic tools, folded away: only useful when something goes wrong -->
+      <details class="tools" id="tools">
+        <summary class="section__title" data-i18n="popupDiagnosticTools">Outils de diagnostic</summary>
+        <div class="tools__body">
+          <div class="actions">
+            <button class="button button--ghost" id="test-target" type="button" data-action>
+              <span class="button__icon" data-icon="refresh"></span>
+              <span class="button__label"></span>
+            </button>
+            <button class="button button--ghost" id="open-target" type="button" data-action>
+              <span class="button__icon" data-icon="externalLink"></span>
+              <span class="button__label"></span>
+            </button>
+            <button class="button button--ghost button--wide" id="insert-test" type="button" data-action>
+              <span class="button__icon" data-icon="send"></span>
+              <span class="button__label"></span>
+            </button>
+            <button class="button button--ghost button--wide" id="read-source" type="button" data-action>
+              <span class="button__icon" data-icon="sparkles"></span>
+              <span class="button__label"></span>
+            </button>
+            <button class="button button--link button--wide" id="diagnose-source" type="button" data-action>
+              <span class="button__icon" data-icon="code" data-icon-size="14"></span>
+              <span class="button__label"></span>
+            </button>
+          </div>
+          <p class="feedback" id="tools-feedback" role="status" hidden></p>
+          <div class="preview" id="preview" hidden>
+            <pre class="preview__text" id="preview-text" tabindex="0"></pre>
+            <button class="button button--ghost preview__copy" id="copy-preview" type="button">
+              <span class="button__icon" data-icon="copy" data-icon-size="14"></span>
+              <span class="button__label"></span>
+            </button>
+          </div>
+        </div>
+      </details>
 
       <footer class="muted" id="version"></footer>
     </main>

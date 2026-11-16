@@ -108,6 +108,7 @@ function startFixtureServer(control) {
  *   sendMessage: (message: object) => Promise<any>,
  *   evalSW: (fn: Function, arg?: any) => Promise<any>,
  *   pagesOf: (host: string) => import('playwright').Page[],
+ *   openPopup: (options?: {tools?: boolean}) => Promise<import('playwright').Page>,
  *   close: () => Promise<void>,
  * }>}
  */
@@ -154,6 +155,14 @@ async function launch() {
     sendMessage: (message) => probe.evaluate((m) => chrome.runtime.sendMessage(m), message),
     evalSW: (fn, arg) => sw.evaluate(fn, arg),
     pagesOf: (host) => context.pages().filter((p) => p.url().includes(host)),
+    /** Opens the popup as a tab; `tools: true` unfolds the diagnostic tools. */
+    async openPopup({ tools = false } = {}) {
+      const popup = await context.newPage();
+      await popup.goto(`chrome-extension://${extensionId}/src/popup/popup.html`);
+      await popup.locator('body[data-ready="true"]').waitFor();
+      if (tools) await popup.click('#tools summary');
+      return popup;
+    },
     close: async () => {
       await context.close();
       server.closeAllConnections();

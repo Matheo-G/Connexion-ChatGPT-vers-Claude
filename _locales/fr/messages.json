@@ -224,5 +224,153 @@
   },
   "error_BUSY": {
     "message": "Un envoi est déjà en cours pour cette réponse."
+  },
+  "optionsSubtitle": {
+    "message": "Réglages de l'extension"
+  },
+  "saved": {
+    "message": "Enregistré"
+  },
+  "optSectionDestination": {
+    "message": "Destination"
+  },
+  "optDefaultTarget": {
+    "message": "IA de destination"
+  },
+  "optDefaultTargetHint": {
+    "message": "L'IA qui reçoit vos réponses. D'autres arriveront (Gemini, Grok…)."
+  },
+  "optNewConversation": {
+    "message": "Nouvelle conversation à chaque envoi"
+  },
+  "optNewConversationHint": {
+    "message": "Désactivé : la réponse est ajoutée à la conversation Claude déjà ouverte."
+  },
+  "optAutoSend": {
+    "message": "Envoyer automatiquement"
+  },
+  "optAutoSendHint": {
+    "message": "Désactivé : le texte est seulement inséré, vous relisez puis envoyez vous-même."
+  },
+  "optSectionAfter": {
+    "message": "Après l'envoi"
+  },
+  "optReturnToSource": {
+    "message": "Revenir sur ChatGPT"
+  },
+  "optReturnToSourceHint": {
+    "message": "Réactive l'onglet ChatGPT une fois le message parti. Claude répond en arrière-plan."
+  },
+  "optSectionWorkflows": {
+    "message": "Workflows"
+  },
+  "optDefaultWorkflow": {
+    "message": "Workflow par défaut"
+  },
+  "optDefaultWorkflowHint": {
+    "message": "Utilisé par le bouton et le raccourci. Les workflows /figma, /code… arrivent bientôt."
+  },
+  "optSectionAppearance": {
+    "message": "Apparence"
+  },
+  "optTheme": {
+    "message": "Thème"
+  },
+  "optThemeHint": {
+    "message": "Pour la popup et cette page. Le bouton dans ChatGPT suit toujours le thème de ChatGPT."
+  },
+  "themeAuto": {
+    "message": "Système"
+  },
+  "themeLight": {
+    "message": "Clair"
+  },
+  "themeDark": {
+    "message": "Sombre"
+  },
+  "optSectionShortcut": {
+    "message": "Raccourci clavier"
+  },
+  "optShortcut": {
+    "message": "Envoyer la dernière réponse"
+  },
+  "optShortcutHint": {
+    "message": "Fonctionne depuis n'importe quel onglet."
+  },
+  "optShortcutNone": {
+    "message": "Non défini"
+  },
+  "optShortcutChange": {
+    "message": "Modifier"
+  },
+  "optSectionPrivacy": {
+    "message": "Historique et confidentialité"
+  },
+  "optKeepHistory": {
+    "message": "Garder un historique des envois"
+  },
+  "optKeepHistoryHint": {
+    "message": "Uniquement dans ce navigateur, avec un court aperçu du texte. Rien n'est envoyé ailleurs."
+  },
+  "optClearHistory": {
+    "message": "Effacer l'historique"
+  },
+  "optSectionAdvanced": {
+    "message": "Avancé"
+  },
+  "optDebugMode": {
+    "message": "Mode debug"
+  },
+  "optDebugModeHint": {
+    "message": "Journaux détaillés dans la console, utiles pour signaler un problème."
+  },
+  "optReset": {
+    "message": "Réinitialiser les réglages"
+  },
+  "confirmAction": {
+    "message": "Confirmer ?"
+  },
+  "done": {
+    "message": "C'est fait"
+  },
+  "popupQuickSend": {
+    "message": "Envoyer la dernière réponse à $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "popupHistory": {
+    "message": "Derniers envois"
+  },
+  "popupHistoryEmpty": {
+    "message": "Aucun envoi pour l'instant. Cliquez sur « ➤ Claude » sous une réponse de ChatGPT."
+  },
+  "popupHistoryOff": {
+    "message": "Historique désactivé dans les réglages."
+  },
+  "popupDiagnosticTools": {
+    "message": "Outils de diagnostic"
+  },
+  "historySent": {
+    "message": "Envoyé"
+  },
+  "historyInserted": {
+    "message": "Inséré"
+  },
+  "historyFailed": {
+    "message": "Échec"
+  },
+  "historyOpen": {
+    "message": "Ouvrir la conversation"
+  },
+  "quickSendDone": {
+    "message": "Réponse envoyée à $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
   }
 }

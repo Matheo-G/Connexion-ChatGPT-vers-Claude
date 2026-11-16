@@ -1,192 +1,134 @@
 /**
  * @file Popup controller.
- * Shows the connection status of each AI and offers a diagnostic to open
- * or test the destination (Claude) without sending anything.
+ *
+ *   - main action: send ChatGPT's latest answer to the target AI;
+ *   - connection status of each AI;
+ *   - latest sends (local history);
+ *   - diagnostic tools (folded): test/open the target, insert a sample text,
+ *     preview the Markdown read from ChatGPT, copy an anonymous page diagnostic.
  */
 
 import { MessageType } from '../shared/message-types.js';
-import { RouterError } from '../shared/errors.js';
-import { DEFAULT_SETTINGS, Timeouts } from '../shared/defaults.js';
-import { getProvider, listProviders } from '../providers/registry.js';
-import { sendToBackground } from '../services/messaging.js';
+import { getProvider } from '../providers/registry.js';
+import { getSettings } from '../services/settings.js';
 import { localizeDocument, t } from '../utils/i18n.js';
 import { hydrateIcons } from '../ui-kit/dom-icons.js';
-import { icon } from '../ui-kit/icons.js';
+import { applyTheme } from '../ui-kit/theme.js';
 import { createLogger } from '../utils/logger.js';
+import { runAction } from './feedback.js';
+import { refreshStatus } from './status-list.js';
+import { mountHistory } from './history-list.js';
 
 const log = createLogger('popup');
-const target = getProvider(DEFAULT_SETTINGS.defaultTarget, 'target');
 const source = getProvider('chatgpt', 'source');
-
-const STATE_LABELS = {
-  ready: 'stateReady',
-  'not-ready': 'stateNotReady',
-  'logged-out': 'stateLoggedOut',
-  'no-tab': 'stateNoTab',
-  checking: 'stateChecking',
-};
+const SHORTCUT_COMMAND = 'send-latest-answer';
 
 const $ = (id) => document.getElementById(id);
+const setLabel = (id, text) => ($(id).querySelector('.button__label').textContent = text);
 
-// ---- Status list --------------------------------------------------------
+/** Context shared by the actions (filled in init). */
+let target = null;
 
-async function refreshStatus() {
-  try {
-    renderProviders(await sendToBackground(MessageType.GET_STATUS));
-  } catch (error) {
-    log.error('Status unavailable', error);
-  }
-}
+const refresh = () => refreshStatus($('provider-list'));
+const seconds = (ms) => `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
 
-function renderProviders(providers) {
-  $('provider-list').replaceChildren(...providers.map(renderProvider));
-}
+// ---- Actions ----------------------------------------------------------------
 
-function renderProvider({ name, roles, state }) {
-  const item = document.createElement('li');
-  item.className = 'provider';
-  item.dataset.state = state;
-
-  const label = document.createElement('span');
-  label.className = 'provider__name';
-  label.textContent = name;
-  const role = document.createElement('span');
-  role.className = 'provider__role';
-  role.textContent = t(roles.includes('target') ? 'roleTarget' : 'roleSource');
-  label.append(role);
-
-  const status = document.createElement('span');
-  status.className = 'provider__state';
-  status.innerHTML = '<span class="dot" aria-hidden="true"></span>';
-  status.append(t(STATE_LABELS[state]) || state);
-
-  item.append(label, status);
-  return item;
-}
-
-// ---- Diagnostic actions -------------------------------------------------
-
-/** Default success message: "Claude est prêt (1,2 s)". */
-function targetReadyMessage(result) {
-  const seconds = `${(result.durationMs / 1000).toFixed(1).replace('.', ',')} s`;
-  return t('testSuccess', [target.name, seconds]);
-}
-
-/**
- * Runs a background action with busy state and feedback.
- * Actions that focus the Claude tab close the popup: the background keeps
- * going and the result is visible in Claude itself.
- * @param {(result: any) => string} [onSuccess]  Returns the success message.
- */
-async function runAction(button, type, payload, onSuccess = targetReadyMessage) {
-  setBusy(button, true);
-  hidePreview();
-  showFeedback('info', t('testRunning'));
-  try {
-    const result = await sendToBackground(type, payload, { timeout: Timeouts.DELIVERY });
-    showFeedback('success', onSuccess(result));
-  } catch (error) {
-    showFeedback('error', RouterError.from(error).userMessage);
-  } finally {
-    setBusy(button, false);
-    refreshStatus();
-  }
-}
-
-const testConnection = (button) =>
-  runAction(button, MessageType.OPEN_TARGET, { providerId: target.id, activate: false });
-
-const openTarget = (button) =>
-  runAction(button, MessageType.OPEN_TARGET, { providerId: target.id, activate: true });
-
-/** Inserts a sample text WITHOUT sending it: no Claude message is consumed. */
-const insertTestText = (button) =>
-  runAction(button, MessageType.DELIVER_TEXT, {
-    providerId: target.id,
-    text: t('testInsertText'),
-    autoSend: false,
-    activate: true,
+function quickSend(button) {
+  return runAction({
+    button,
+    feedback: $('feedback'),
+    type: MessageType.ROUTE_REQUEST,
+    payload: { trigger: 'popup' },
+    onSuccess: () => t('quickSendDone', target.name),
+    onSettled: refresh,
   });
+}
 
-/** Reads ChatGPT's latest answer and shows the Markdown that would be sent. */
-const readSource = (button) =>
-  runAction(button, MessageType.READ_SOURCE, { providerId: source.id }, (answer) => {
-    showPreview(answer.markdown);
-    return t('readSourceResult', String(answer.length));
-  });
+/** Diagnostic actions report in their own feedback area, next to them. */
+function tool(button, type, payload, onSuccess) {
+  return runAction({ button, feedback: $('tools-feedback'), type, payload, onSuccess, onSettled: refresh });
+}
 
-/**
- * Copies an anonymous structural snapshot of the ChatGPT page (no
- * conversation text) to send when the extension cannot read a new layout.
- */
-const diagnoseSource = (button) =>
-  runAction(button, MessageType.DIAGNOSE, { providerId: source.id }, (result) => {
-    showPreview(result.text); // also visible, in case the clipboard is refused
-    navigator.clipboard.writeText(result.text).catch(() => {});
-    return t('diagnosticCopied');
-  });
+const targetReady = (result) => t('testSuccess', [target.name, seconds(result.durationMs)]);
 
-function showPreview(markdown) {
-  $('preview-text').textContent = markdown;
+const TOOLS = {
+  'test-target': (b) => tool(b, MessageType.OPEN_TARGET, { providerId: target.id, activate: false }, targetReady),
+  'open-target': (b) => tool(b, MessageType.OPEN_TARGET, { providerId: target.id, activate: true }, targetReady),
+  /** Inserts a sample text WITHOUT sending it: no message is consumed. */
+  'insert-test': (b) =>
+    tool(b, MessageType.DELIVER_TEXT, { providerId: target.id, text: t('testInsertText'), autoSend: false }, targetReady),
+  /** Shows the Markdown that would be sent. */
+  'read-source': (b) =>
+    tool(b, MessageType.READ_SOURCE, { providerId: source.id }, (answer) => {
+      showPreview(answer.markdown);
+      return t('readSourceResult', String(answer.length));
+    }),
+  /** Anonymous structural snapshot (no conversation text) for troubleshooting. */
+  'diagnose-source': (b) =>
+    tool(b, MessageType.DIAGNOSE, { providerId: source.id }, (result) => {
+      showPreview(result.text); // also visible, in case the clipboard is refused
+      navigator.clipboard.writeText(result.text).catch(() => {});
+      return t('diagnosticCopied');
+    }),
+};
+
+function showPreview(text) {
+  $('preview-text').textContent = text;
   $('preview').hidden = false;
-}
-
-function hidePreview() {
-  $('preview').hidden = true;
 }
 
 async function copyPreview(button) {
   await navigator.clipboard.writeText($('preview-text').textContent);
-  const label = button.querySelector('.button__label');
-  label.textContent = t('copied');
-  setTimeout(() => (label.textContent = t('copyMarkdown')), 1500);
+  setLabel(button.id, t('copied'));
+  setTimeout(() => setLabel(button.id, t('copyMarkdown')), 1500);
 }
 
-function setBusy(button, busy) {
-  for (const b of document.querySelectorAll('.actions .button')) b.disabled = busy;
-  button.setAttribute('aria-busy', String(busy));
+// ---- Setup --------------------------------------------------------------------
+
+async function renderShortcut() {
+  const commands = await chrome.commands.getAll();
+  const shortcut = commands.find((c) => c.name === SHORTCUT_COMMAND)?.shortcut;
+  const hint = $('shortcut-hint');
+  if (!shortcut) return (hint.hidden = true);
+  hint.textContent = `${t('optSectionShortcut')} : `;
+  const kbd = document.createElement('kbd');
+  kbd.textContent = shortcut;
+  hint.append(kbd);
 }
 
-/** @param {'info' | 'success' | 'error'} tone */
-function showFeedback(tone, message) {
-  const el = $('feedback');
-  const glyph = { success: 'check', error: 'alert', info: 'refresh' }[tone];
-  el.dataset.tone = tone;
-  el.innerHTML = icon(glyph, { size: 16 });
-  el.append(message);
-  el.hidden = false;
-}
-
-// ---- Setup --------------------------------------------------------------
-
-function renderStaticTexts() {
+function renderTexts() {
   const { version } = chrome.runtime.getManifest();
   $('version').textContent = t('versionLabel', version) || `v${version}`;
-  $('test-target').querySelector('.button__label').textContent = t('actionTestTarget', target.name);
-  $('open-target').querySelector('.button__label').textContent = t('actionOpenTarget', target.name);
-  $('insert-test').querySelector('.button__label').textContent = t('actionInsertTest');
-  $('read-source').querySelector('.button__label').textContent = t('actionReadSource', source.name);
-  $('copy-preview').querySelector('.button__label').textContent = t('copyMarkdown');
-  $('diagnose-source').querySelector('.button__label').textContent = t('actionDiagnose', source.name);
+  setLabel('quick-send', t('popupQuickSend', target.name));
+  setLabel('test-target', t('actionTestTarget', target.name));
+  setLabel('open-target', t('actionOpenTarget', target.name));
+  setLabel('insert-test', t('actionInsertTest'));
+  setLabel('read-source', t('actionReadSource', source.name));
+  setLabel('diagnose-source', t('actionDiagnose', source.name));
+  setLabel('copy-preview', t('copyMarkdown'));
 }
 
 function bindActions() {
   $('open-options').addEventListener('click', () => chrome.runtime.openOptionsPage());
-  $('test-target').addEventListener('click', (e) => testConnection(e.currentTarget));
-  $('open-target').addEventListener('click', (e) => openTarget(e.currentTarget));
-  $('insert-test').addEventListener('click', (e) => insertTestText(e.currentTarget));
-  $('read-source').addEventListener('click', (e) => readSource(e.currentTarget));
+  $('quick-send').addEventListener('click', (e) => quickSend(e.currentTarget));
+  for (const [id, run] of Object.entries(TOOLS)) {
+    $(id).addEventListener('click', (e) => run(e.currentTarget));
+  }
   $('copy-preview').addEventListener('click', (e) => copyPreview(e.currentTarget));
-  $('diagnose-source').addEventListener('click', (e) => diagnoseSource(e.currentTarget));
 }
 
-function init() {
+async function init() {
+  const settings = await getSettings();
+  applyTheme(settings.theme);
+  target = getProvider(settings.defaultTarget, 'target');
+
   localizeDocument();
   hydrateIcons();
-  renderStaticTexts();
+  renderTexts();
   bindActions();
-  renderProviders(listProviders().map((p) => ({ ...p, state: 'checking' })));
-  refreshStatus();
+  await Promise.all([refresh(), mountHistory($('history-list'), { enabled: settings.keepHistory }), renderShortcut()]);
+  document.body.dataset.ready = 'true';
   log.debug('Popup ready');
 }
 

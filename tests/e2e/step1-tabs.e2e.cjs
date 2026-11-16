@@ -134,13 +134,12 @@ test('GET_STATUS reports each provider', async () => {
 });
 
 test('popup: status list + "test connection" button', async () => {
-  const popup = await h.context.newPage();
-  await popup.goto(`chrome-extension://${h.extensionId}/src/popup/popup.html`);
+  const popup = await h.openPopup({ tools: true });
   await popup.locator('.provider[data-state="no-tab"]', { hasText: 'Claude' }).waitFor();
 
   await popup.click('#test-target');
-  await popup.locator('#feedback[data-tone="success"]').waitFor({ timeout: 15_000 });
-  assert.match(await popup.textContent('#feedback'), /Claude est prêt \(\d+,\d s\)/);
+  await popup.locator('#tools-feedback[data-tone="success"]').waitFor({ timeout: 15_000 });
+  assert.match(await popup.textContent('#tools-feedback'), /Claude est prêt \(\d+,\d s\)/);
   await popup.locator('.provider[data-state="ready"]', { hasText: 'Claude' }).waitFor();
   await popup.close();
 });

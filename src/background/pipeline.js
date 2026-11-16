@@ -15,7 +15,9 @@ import { MessageType, PipelineStep } from '../shared/message-types.js';
 import { RouterError, ErrorCode } from '../shared/errors.js';
 import { getWorkflow } from '../workflows/registry.js';
 import { getProvider } from '../providers/registry.js';
+import { DEFAULT_SETTINGS } from '../shared/defaults.js';
 import { getSettings } from '../services/settings.js';
+import { addHistoryEntry, createEntry } from '../services/history.js';
 import { sendToTab, createRequestId } from '../services/messaging.js';
 import { createLogger } from '../utils/logger.js';
 import { readSource } from './source-session.js';
@@ -46,12 +48,17 @@ export async function runPipeline(request = {}) {
   if (running.has(key)) throw new RouterError(ErrorCode.BUSY, `Job already running for ${key}`);
 
   running.add(key);
-  const job = { jobId: createRequestId(), messageId, trigger, tabId: request.sourceTabId };
+  const job = { jobId: createRequestId(), messageId, trigger, tabId: request.sourceTabId, sourceProviderId };
+  let settings = { ...DEFAULT_SETTINGS };
   try {
-    return await execute(request, job, sourceProviderId);
+    settings = await getSettings();
+    const result = await execute(request, job, settings);
+    record(settings, job, { status: result.sent ? 'sent' : 'inserted', targetUrl: result.url });
+    return result;
   } catch (error) {
     const routerError = RouterError.from(error);
     notify(job, PipelineStep.FAILED, { error: routerError.toJSON() });
+    record(settings, job, { status: 'failed', errorCode: routerError.code });
     log.warn(`Job ${job.jobId} failed`, routerError.code, routerError.message);
     throw routerError;
   } finally {
@@ -59,11 +66,12 @@ export async function runPipeline(request = {}) {
   }
 }
 
-async function execute(request, job, sourceProviderId) {
-  const settings = await getSettings();
+async function execute(request, job, settings) {
+  const { sourceProviderId } = job;
   const workflow = getWorkflow(request.workflowId ?? settings.defaultWorkflow);
   const target = getProvider(request.targetProviderId ?? workflow.target ?? settings.defaultTarget, 'target');
   const options = { ...settings, ...workflow.options };
+  Object.assign(job, { workflowId: workflow.id, targetId: target.id });
   log.info(`Job ${job.jobId}: ${sourceProviderId} → ${workflow.id} → ${target.id}`);
 
   notify(job, PipelineStep.EXTRACTING);
@@ -72,6 +80,7 @@ async function execute(request, job, sourceProviderId) {
 
   notify(job, PipelineStep.TRANSFORMING);
   const text = await workflow.transform({ text: answer.markdown, prompt: answer.prompt });
+  job.text = text;
 
   const delivery = await deliverText(target.id, text, {
     autoSend: options.autoSend,
@@ -84,6 +93,22 @@ async function execute(request, job, sourceProviderId) {
   if (options.returnToSource) await returnTo(answer.tabId);
   notify(job, PipelineStep.DONE, { targetName: target.name, sent: delivery.sent });
   return { jobId: job.jobId, workflowId: workflow.id, targetId: target.id, ...delivery };
+}
+
+/** Local history (if enabled) — a short preview only, see services/history.js. */
+function record(settings, job, outcome) {
+  if (!settings.keepHistory) return;
+  addHistoryEntry(
+    createEntry({
+      id: job.jobId,
+      at: Date.now(),
+      sourceId: job.sourceProviderId,
+      targetId: job.targetId ?? settings.defaultTarget,
+      workflowId: job.workflowId ?? settings.defaultWorkflow,
+      text: job.text ?? '',
+      ...outcome,
+    }),
+  );
 }
 
 async function returnTo(tabId) {

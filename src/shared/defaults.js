@@ -27,8 +27,10 @@ export const DEFAULT_SETTINGS = Object.freeze({
   returnToSource: false,
   /** Detect "/command" in the user's last ChatGPT message. */
   detectSlashCommands: true,
-  /** 'auto' | 'light' | 'dark' */
+  /** 'auto' | 'light' | 'dark' — extension pages (the button follows the AI site). */
   theme: 'auto',
+  /** Keep a local history of sends (short preview only, never leaves the browser). */
+  keepHistory: true,
   /** Verbose console logs in every context. */
   debugMode: false,
 });
@@ -51,3 +53,11 @@ export const Timeouts = Object.freeze({
 
 /** Max number of entries kept in history. */
 export const HISTORY_LIMIT = 50;
+
+/** Characters of the sent text kept as a preview in history. */
+export const HISTORY_PREVIEW_LENGTH = 140;
+
+/** Allowed values of enumerated settings (validation). */
+export const SETTING_CHOICES = Object.freeze({
+  theme: Object.freeze(['auto', 'light', 'dark']),
+});
