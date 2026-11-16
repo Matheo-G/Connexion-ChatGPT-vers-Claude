@@ -2,7 +2,7 @@
  * @file /mail — writes a ready-to-send e-mail from the given context.
  */
 
-import { composePrompt, linksOf } from './prompt-kit.js';
+import { composePrompt } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -11,6 +11,9 @@ export default Object.freeze({
   labelKey: 'workflowMail',
   label: "Rédaction d'e-mail",
   icon: 'mail',
+  /** What ChatGPT must prepare for Claude when the message starts with the command. */
+  chatgptHint:
+    "brief d'e-mail : destinataire, objectif, contexte, ton, éléments à inclure.",
   transform: ({ text, prompt, notes }) =>
     composePrompt({
       intro: 'Rédige un e-mail prêt à envoyer à partir du contexte ci-dessous.',
@@ -35,6 +38,6 @@ export default Object.freeze({
       contentLabel: 'Contexte (préparé avec ChatGPT)',
       content: text,
       notes,
-      links: linksOf(prompt),
+      prompt,
     }),
 });

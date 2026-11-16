@@ -25,10 +25,17 @@ import { listWorkflows } from '../workflows/registry.js';
  * @property {{id: string, labelKey: string, danger?: boolean}[]} [actions]
  * @property {boolean} [shortcut]        Renders the keyboard shortcut row.
  * @property {boolean} [workflowNotes]   Renders one personal-instructions box per workflow.
+ * @property {boolean} [chatgptSetup]    Renders the instructions to paste into ChatGPT.
  */
 
 /** @type {Section[]} */
 export const SETTINGS_SCHEMA = [
+  {
+    id: 'chatgpt-setup',
+    titleKey: 'optSectionChatGPT',
+    fields: [],
+    chatgptSetup: true,
+  },
   {
     id: 'destination',
     titleKey: 'optSectionDestination',

@@ -28,7 +28,7 @@ beforeEach(async () => {
     await chrome.storage.sync.set({ settings: { detectSlashCommands: false } });
   });
   // Close everything but the harness's messaging probe (the first options page).
-  const probe = h.context.pages().find((p) => p.url().endsWith('/src/options/options.html'));
+  const probe = h.context.pages().find((p) => p.url().endsWith('options.html?probe'));
   for (const page of h.context.pages()) {
     if (page !== probe && /chatgpt\.com|claude\.ai|options\.html|popup\.html/.test(page.url())) await page.close();
   }
@@ -69,6 +69,7 @@ test('options page: every section rendered with the stored values', async () => 
 
   const titles = await page.locator('.section__title').allTextContents();
   assert.deepEqual(titles, [
+    'Configurer ChatGPT (une seule fois)',
     'Destination',
     'Après l’envoi'.replace('’', "'"),
     'Workflows',

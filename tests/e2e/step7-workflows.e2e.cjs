@@ -27,7 +27,7 @@ beforeEach(async () => {
     await chrome.storage.sync.clear();
     await chrome.storage.local.clear();
   });
-  const probe = h.context.pages().find((p) => p.url().endsWith('/src/options/options.html'));
+  const probe = h.context.pages().find((p) => p.url().endsWith('options.html?probe'));
   for (const page of h.context.pages()) {
     if (page !== probe && /chatgpt\.com|claude\.ai|options\.html|popup\.html/.test(page.url())) await page.close();
   }
@@ -168,6 +168,33 @@ test('a Figma link in the prompt reaches Claude, even when ChatGPT shortens it',
   const sent = await receivedByClaude();
   assert.match(sent, /Travaille dans le fichier Figma existant/);
   assert.ok(sent.includes(figma), 'full Figma address forwarded');
-  assert.ok(sent.includes('https://exemple.fr/brief'), 'other link forwarded, without the final dot');
-  assert.ok(!sent.includes('https://exemple.fr/brief.'), 'sentence punctuation not glued to the link');
+  assert.match(sent, /Ma demande initiale\s+Améliore figma\.com selon https:\/\/exemple\.fr\/brief\./, 'request as written');
+  assert.doesNotMatch(sent, /Liens fournis dans ma demande/, 'no duplicate: links are already in the request or the intro');
+});
+
+// ---- ChatGPT does not know the commands: setup + original request ----------
+
+test('options: ChatGPT setup instructions, ready to paste (≤ 1500 chars)', async () => {
+  const options = await h.context.newPage();
+  await options.goto(`chrome-extension://${h.extensionId}/src/options/options.html`);
+  await options.locator('body[data-ready="true"]').waitFor();
+  assert.equal(await options.locator('.section__title').first().textContent(), 'Configurer ChatGPT (une seule fois)');
+  const text = await options.inputValue('#chatgpt-instructions');
+  for (const command of ['/figma', '/code', '/video', '/job', '/mail']) assert.ok(text.includes(`- ${command} : `));
+  assert.ok(text.length <= 1500);
+  await options.click('#copy-chatgpt-instructions');
+  await options.waitForFunction(() => document.getElementById('copy-chatgpt-instructions').textContent === 'Copié');
+});
+
+test('real case: ChatGPT gives a poor answer, Claude still gets the request and the frame', async () => {
+  const frame =
+    'https://www.figma.com/design/EsD6vdTEYsOMdl0DuCC1x2/Jalonet---Mobile%F0%9F%93%B1?node-id=6208-5&t=JlWh0w8RK25bKNQW-11';
+  h.control.chatgpt = { layout: 'turn-key', prompt: `/figma écrit moi "Hello" dans cette frame : ${frame}` };
+  const page = await openChatGPT();
+  await page.locator(`${BUTTON} .main`).nth(1).click();
+  const sent = await receivedByClaude();
+  assert.match(sent, /Travaille dans le fichier Figma existant/);
+  assert.ok(sent.includes(frame), 'exact frame link');
+  assert.match(sent, /Ma demande initiale\s+écrit moi "Hello" dans cette frame/);
+  assert.match(sent, /ma demande initiale prime/);
 });

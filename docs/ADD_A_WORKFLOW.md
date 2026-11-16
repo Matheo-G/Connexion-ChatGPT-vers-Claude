@@ -7,7 +7,7 @@ Un workflow transforme la réponse de ChatGPT avant de l'envoyer à l'IA de dest
 Copier `src/workflows/_template.workflow.js` vers `src/workflows/<id>.workflow.js` :
 
 ```js
-import { composePrompt, linksOf } from './prompt-kit.js';
+import { composePrompt } from './prompt-kit.js';
 
 export default Object.freeze({
   id: 'linkedin',                 // unique, en minuscules
@@ -26,13 +26,13 @@ export default Object.freeze({
       contentLabel: 'Contenu (préparé avec ChatGPT)',
       content: text,
       notes,
-      links: linksOf(prompt),
+      prompt,
     }),
 });
 ```
 
 - `text` : la réponse de ChatGPT, en Markdown. **Ne jamais la modifier** : on l'encadre seulement.
-- `prompt` : votre message à ChatGPT. Il n'est pas transmis tel quel, mais **ses liens doivent l'être** : `links: linksOf(prompt)`. ChatGPT les recopie rarement dans sa réponse.
+- `prompt` : votre message à ChatGPT. **Passez-le à `composePrompt`** : il est transmis sous « Ma demande initiale » (sans la commande), avec ses liens. Claude connaît ainsi l'intention même si la réponse de ChatGPT est faible.
 - `notes` : vos consignes personnelles, saisies dans les réglages (`composePrompt` les ajoute en fin de prompt).
 
 ## 2. L'enregistrer

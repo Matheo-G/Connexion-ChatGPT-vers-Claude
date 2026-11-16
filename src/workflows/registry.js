@@ -29,6 +29,7 @@ import mail from './mail.workflow.js';
  * @property {string} labelKey        i18n key of its name.
  * @property {string} label           Fallback name.
  * @property {string} icon            ui-kit icon name.
+ * @property {string} [chatgptHint]   What ChatGPT must prepare for Claude (see chatgpt-instructions.js).
  * @property {string} [target]        Provider id overriding the default target.
  * @property {Partial<import('../shared/defaults.js').Settings>} [options]  Overrides (autoSend…).
  * @property {(input: WorkflowInput) => string | Promise<string>} transform

@@ -450,5 +450,23 @@
         "content": "$2"
       }
     }
+  },
+  "optSectionChatGPT": {
+    "message": "Configurer ChatGPT (une seule fois)"
+  },
+  "optChatGPTWhy": {
+    "message": "ChatGPT ne connaît pas les commandes /figma, /code… Sans ces instructions, il essaie de faire la tâche lui-même (et répond parfois qu'il ne peut pas). Avec elles, il rédige un brief que Claude exécutera."
+  },
+  "optChatGPTStep1": {
+    "message": "Copiez le texte ci-dessous."
+  },
+  "optChatGPTStep2": {
+    "message": "Dans ChatGPT : Paramètres → Personnalisation → Instructions personnalisées, champ sur la façon dont ChatGPT doit répondre (ou dans les instructions d'un Projet ChatGPT)."
+  },
+  "optChatGPTStep3": {
+    "message": "Collez, enregistrez, puis démarrez une nouvelle conversation."
+  },
+  "optChatGPTCopy": {
+    "message": "Copier les instructions"
   }
 }

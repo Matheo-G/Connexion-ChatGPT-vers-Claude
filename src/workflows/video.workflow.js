@@ -3,7 +3,7 @@
  * Higgsfield (shot list, camera, lighting, style), prompts in English.
  */
 
-import { composePrompt, linksOf } from './prompt-kit.js';
+import { composePrompt } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -12,6 +12,9 @@ export default Object.freeze({
   labelKey: 'workflowVideo',
   label: 'Vidéo Higgsfield',
   icon: 'video',
+  /** What ChatGPT must prepare for Claude when the message starts with the command. */
+  chatgptHint:
+    'brief vidéo pour Higgsfield : intention, public, durée, ambiance, style, plans envisagés.',
   transform: ({ text, prompt, notes }) =>
     composePrompt({
       intro:
@@ -38,6 +41,6 @@ export default Object.freeze({
       contentLabel: 'Idée de vidéo (préparée avec ChatGPT)',
       content: text,
       notes,
-      links: linksOf(prompt),
+      prompt,
     }),
 });

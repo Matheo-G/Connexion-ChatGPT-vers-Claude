@@ -2,7 +2,7 @@
  * @file /code — development task: implement, fix or review code from the brief.
  */
 
-import { composePrompt, linksOf } from './prompt-kit.js';
+import { composePrompt } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -11,6 +11,9 @@ export default Object.freeze({
   labelKey: 'workflowCode',
   label: 'Développement',
   icon: 'code',
+  /** What ChatGPT must prepare for Claude when the message starts with the command. */
+  chatgptHint:
+    'brief de développement : objectif, contexte technique, contraintes, critères de réussite.',
   transform: ({ text, prompt, notes }) =>
     composePrompt({
       intro:
@@ -37,6 +40,6 @@ export default Object.freeze({
       contentLabel: 'Demande (préparée avec ChatGPT)',
       content: text,
       notes,
-      links: linksOf(prompt),
+      prompt,
     }),
 });

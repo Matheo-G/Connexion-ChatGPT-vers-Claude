@@ -150,7 +150,8 @@ async function launch() {
 
   // An extension page used to send runtime messages like the popup does.
   const probe = await context.newPage();
-  await probe.goto(`chrome-extension://${extensionId}/src/options/options.html`);
+  // `?probe` tells it apart from the options tab the extension opens on install.
+  await probe.goto(`chrome-extension://${extensionId}/src/options/options.html?probe`);
 
   return {
     context,

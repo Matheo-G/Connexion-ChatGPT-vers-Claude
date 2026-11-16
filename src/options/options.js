@@ -8,6 +8,7 @@ import { getSettings, updateSettings, resetSettings, onSettingsChanged } from '.
 import { clearHistory } from '../services/history.js';
 import { getWorkflowNotes, setWorkflowNotes, NOTES_MAX_LENGTH } from '../services/workflow-notes.js';
 import { listWorkflows } from '../workflows/registry.js';
+import { buildChatGPTInstructions } from '../workflows/chatgpt-instructions.js';
 import { localizeDocument, t } from '../utils/i18n.js';
 import { hydrateIcons } from '../ui-kit/dom-icons.js';
 import { applyTheme } from '../ui-kit/theme.js';
@@ -38,6 +39,7 @@ function renderSections() {
     card.append(...section.fields.map(renderField));
     if (section.shortcut) card.append(renderShortcutRow());
     if (section.workflowNotes) card.append(...renderWorkflowNotes());
+    if (section.chatgptSetup) card.append(renderChatGPTSetup());
     if (section.actions?.length) card.append(renderActions(section.actions));
     wrapper.append(el('h2', 'section__title', t(section.titleKey)), card);
     return wrapper;
@@ -115,6 +117,34 @@ function renderShortcutRow() {
   change.addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
   control.append(keys, change);
   return renderRow(t('optShortcut'), t('optShortcutHint'), control);
+}
+
+/**
+ * Instructions to paste once into ChatGPT, so "/figma …" makes it write a
+ * brief for Claude instead of trying (and refusing) the task itself.
+ */
+function renderChatGPTSetup() {
+  const row = el('div', 'row row--stacked chatgpt-setup');
+  const steps = el('ol', 'steps');
+  for (const key of ['optChatGPTStep1', 'optChatGPTStep2', 'optChatGPTStep3']) steps.append(el('li', '', t(key)));
+
+  const text = buildChatGPTInstructions();
+  const textarea = el('textarea', 'textarea textarea--code');
+  Object.assign(textarea, { id: 'chatgpt-instructions', readOnly: true, rows: 12, value: text });
+
+  const copy = el('button', 'button button--primary', t('optChatGPTCopy'));
+  copy.type = 'button';
+  copy.id = 'copy-chatgpt-instructions';
+  copy.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(text).catch(() => textarea.select());
+    copy.textContent = t('copied');
+    setTimeout(() => (copy.textContent = t('optChatGPTCopy')), SAVED_VISIBLE_MS);
+  });
+  const footer = el('div', 'row__control');
+  footer.append(copy, el('span', 'counter', `${text.length} / 1500`));
+
+  row.append(el('p', 'row__hint', t('optChatGPTWhy')), steps, textarea, footer);
+  return row;
 }
 
 /** One textarea per workflow; saved while typing (debounced). */

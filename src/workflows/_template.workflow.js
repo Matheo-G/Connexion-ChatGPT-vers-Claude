@@ -8,7 +8,7 @@
  * This file is NOT registered: it is only a starting point.
  */
 
-import { composePrompt, linksOf } from './prompt-kit.js';
+import { composePrompt } from './prompt-kit.js';
 
 /** @type {import('./registry.js').Workflow} */
 export default Object.freeze({
@@ -17,6 +17,7 @@ export default Object.freeze({
   labelKey: 'workflowTemplate', // i18n key of the name shown in menus
   label: 'Modèle', // fallback name
   icon: 'sparkles', // see ui-kit/icons.js
+  chatgptHint: 'brief de … : éléments que ChatGPT doit préparer pour Claude.', // listed in the ChatGPT instructions
   // target: 'claude',              // optional: another destination AI
   // options: { autoSend: false },  // optional: overrides user settings for this workflow
   transform: ({ text, prompt, notes }) =>
@@ -26,6 +27,6 @@ export default Object.freeze({
       contentLabel: 'Contenu (préparé avec ChatGPT)',
       content: text,
       notes,
-      links: linksOf(prompt), // links from the user's message, always forwarded
+      prompt, // forwarded as "Ma demande initiale" (intent + links)
     }),
 });

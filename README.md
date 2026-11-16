@@ -14,6 +14,8 @@ Raccourci clavier : **Alt+Maj+C**, depuis n'importe quel onglet. Il est modifiab
 
 ### Workflows
 
+> **À faire une fois :** dans les réglages de l'extension, section **Configurer ChatGPT**, copiez les instructions et collez-les dans ChatGPT (Paramètres → Personnalisation → Instructions personnalisées). Sans elles, ChatGPT ne sait pas que `/figma` signifie « prépare un brief pour Claude ».
+
 Commencez votre message à ChatGPT par une commande, et la réponse partira vers Claude avec les bonnes instructions. Le bouton affiche alors un badge, par exemple **➤ Claude `/figma`**.
 
 | Commande | Ce que fait Claude |
@@ -24,7 +26,7 @@ Commencez votre message à ChatGPT par une commande, et la réponse partira vers
 | `/job` | Prépare une candidature (analyse, lettre, entretien) |
 | `/mail` | Rédige un e-mail prêt à envoyer |
 
-Les **liens** de votre message (par exemple un lien Figma) sont toujours transmis à Claude. Avec `/figma`, Claude travaille directement dans le fichier indiqué.
+**Votre demande d'origine et ses liens** (par exemple un lien Figma) sont toujours transmis à Claude, en plus de la réponse de ChatGPT. Avec `/figma`, Claude travaille directement dans le fichier indiqué.
 
 La flèche **▾** du bouton permet de choisir un autre workflow pour une réponse. Dans les réglages, vous pouvez ajouter vos **consignes personnelles** à chaque workflow. Pour créer un nouveau workflow, voir [docs/ADD_A_WORKFLOW.md](docs/ADD_A_WORKFLOW.md).
 

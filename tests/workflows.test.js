@@ -145,3 +145,48 @@ test('default workflow only adds links the answer does not already contain', () 
     /---\n\nLiens fournis dans ma demande :\n- https:\/\/exemple\.fr\/brief$/,
   );
 });
+
+// ---- Original request & ChatGPT instructions --------------------------------
+
+import { requestOf } from '../src/workflows/prompt-kit.js';
+import { buildChatGPTInstructions, CHATGPT_INSTRUCTIONS_LIMIT } from '../src/workflows/chatgpt-instructions.js';
+
+const USER_CASE =
+  '/figma écrit moi "Hello" dans cette frame : https://www.figma.com/design/EsD6vdTEYsOMdl0DuCC1x2/Jalonet---Mobile%F0%9F%93%B1?node-id=6208-5&t=JlWh0w8RK25bKNQW-11';
+
+test('requestOf strips the leading command only', () => {
+  assert.equal(requestOf('/figma  écris Hello'), 'écris Hello');
+  assert.equal(requestOf('écris /figma Hello'), 'écris /figma Hello');
+  assert.equal(requestOf('/figma'), '');
+  assert.equal(requestOf(undefined), '');
+});
+
+test('real case: ChatGPT refused, Claude still gets the request and the target frame', () => {
+  const refusal = "Je ne peux pas modifier directement un fichier Figma.";
+  const out = getWorkflow('figma').transform({ text: refusal, prompt: USER_CASE });
+  const url = USER_CASE.split(' : ')[1];
+  assert.ok(out.includes(`Fichier Figma de travail :\n- ${url}`), 'frame link is the working file');
+  assert.match(out, /## Ma demande initiale\n\nécrit moi "Hello" dans cette frame/);
+  assert.match(out, /ma demande initiale prime/);
+  assert.ok(out.indexOf('Ma demande initiale') < out.indexOf(refusal), 'intent before ChatGPT text');
+  assert.equal(out.split(url).length - 1, 2, 'link in the intro and inside the request, nowhere else');
+});
+
+test('workflows forward the request without the command; default stays raw', () => {
+  for (const workflow of listWorkflows().filter((w) => w.id !== 'default')) {
+    const out = workflow.transform({ text: ANSWER, prompt: `${workflow.command} fais ceci` });
+    assert.match(out, /## Ma demande initiale\n\nfais ceci/, workflow.id);
+  }
+  assert.equal(getWorkflow('default').transform({ text: ANSWER, prompt: 'fais ceci' }), ANSWER);
+});
+
+test('ChatGPT instructions: every command explained, within ChatGPT limit', () => {
+  const text = buildChatGPTInstructions();
+  for (const workflow of listWorkflows().filter((w) => w.command)) {
+    assert.ok(workflow.chatgptHint, `${workflow.id} needs a chatgptHint`);
+    assert.ok(text.includes(`- ${workflow.command} : `), `${workflow.command} listed`);
+  }
+  assert.match(text, /ne fais pas la tâche toi-même/);
+  assert.match(text, /Ne dis jamais que tu ne peux pas le faire/);
+  assert.ok(text.length <= CHATGPT_INSTRUCTIONS_LIMIT, `${text.length} > ${CHATGPT_INSTRUCTIONS_LIMIT}`);
+});

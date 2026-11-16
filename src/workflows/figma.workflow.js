@@ -34,6 +34,9 @@ export default Object.freeze({
   labelKey: 'workflowFigma',
   label: 'Design Figma',
   icon: 'figma',
+  /** What ChatGPT must prepare for Claude when the message starts with the command. */
+  chatgptHint:
+    "brief de design. Claude a accès à Figma (connecteur MCP) et peut créer ou modifier mes fichiers : décris l'écran, la structure, les composants et les textes exacts ; recopie tels quels les liens Figma.",
   transform: ({ text, prompt, notes }) => {
     const links = linksOf(prompt);
     const figmaLinks = links.filter(isFigmaUrl);
@@ -63,8 +66,8 @@ export default Object.freeze({
       contentLabel: 'Brief (préparé avec ChatGPT)',
       content: text,
       notes,
-      // Figma links are already in the intro; forward the other ones.
-      links: links.filter((url) => !isFigmaUrl(url)),
+      prompt,
+      excludeLinks: figmaLinks, // already in the intro
     });
   },
 });

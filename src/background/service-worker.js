@@ -34,6 +34,8 @@ chrome.runtime.onInstalled.addListener(({ reason, previousVersion }) => {
   const { version } = chrome.runtime.getManifest();
   log.info(`Installed (${reason})`, { version, previousVersion });
   if (reason === 'install' || reason === 'update') injectIntoOpenTabs();
+  // First install: show the one-time ChatGPT setup (options page, first section).
+  if (reason === 'install') chrome.runtime.openOptionsPage();
 });
 
 chrome.runtime.onStartup.addListener(() => {
