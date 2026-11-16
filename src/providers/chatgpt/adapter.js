@@ -5,7 +5,8 @@
  */
 
 import { MessageType } from '../../shared/message-types.js';
-import { extract, isGenerating, countAssistantMessages } from './reader.js';
+import { extract, isGenerating, describeLayout } from './reader.js';
+import { snapshot } from './diagnostics.js';
 
 /**
  * @param {{log: ReturnType<import('../../utils/logger.js').createLogger>}} context
@@ -16,7 +17,7 @@ export function createAdapter({ log }) {
     describe: () => ({
       path: location.pathname,
       generating: isGenerating(),
-      answers: countAssistantMessages(),
+      ...describeLayout(),
     }),
     handlers: {
       [MessageType.SOURCE_EXTRACT]: (payload) => {
@@ -24,6 +25,7 @@ export function createAdapter({ log }) {
         log.info(`Answer extracted (${answer.length} chars)`);
         return answer;
       },
+      [MessageType.PROVIDER_DIAGNOSE]: () => snapshot(),
     },
     destroy() {},
   };

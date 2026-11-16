@@ -32,6 +32,8 @@ export const MessageType = Object.freeze({
   SOURCE_EXTRACT: 'source/extract',
   /** background → content (target): insert text and optionally send it */
   TARGET_SUBMIT: 'target/submit',
+  /** background → content (any): anonymous DOM skeleton for troubleshooting */
+  PROVIDER_DIAGNOSE: 'provider/diagnose',
   /** background → content (target): report login / quota / editor state */
   TARGET_HEALTH: 'target/health',
 
@@ -40,6 +42,8 @@ export const MessageType = Object.freeze({
   OPEN_TARGET: 'ui/open-target',
   /** popup → background: read the latest answer of a source AI (preview) */
   READ_SOURCE: 'ui/read-source',
+  /** popup → background: anonymous diagnostic of a provider page */
+  DIAGNOSE: 'ui/diagnose',
   /** popup → background: get current connection status */
   GET_STATUS: 'ui/get-status',
 });

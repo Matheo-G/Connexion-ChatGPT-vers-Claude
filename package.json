@@ -1,6 +1,6 @@
 {
   "name": "matheo-ai-router",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Extension Chrome (MV3) qui route les réponses de ChatGPT vers Claude et d'autres IA.",
   "type": "module",

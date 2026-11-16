@@ -115,6 +115,17 @@ const readSource = (button) =>
     return t('readSourceResult', String(answer.length));
   });
 
+/**
+ * Copies an anonymous structural snapshot of the ChatGPT page (no
+ * conversation text) to send when the extension cannot read a new layout.
+ */
+const diagnoseSource = (button) =>
+  runAction(button, MessageType.DIAGNOSE, { providerId: source.id }, (result) => {
+    showPreview(result.text); // also visible, in case the clipboard is refused
+    navigator.clipboard.writeText(result.text).catch(() => {});
+    return t('diagnosticCopied');
+  });
+
 function showPreview(markdown) {
   $('preview-text').textContent = markdown;
   $('preview').hidden = false;
@@ -156,6 +167,7 @@ function renderStaticTexts() {
   $('insert-test').querySelector('.button__label').textContent = t('actionInsertTest');
   $('read-source').querySelector('.button__label').textContent = t('actionReadSource', source.name);
   $('copy-preview').querySelector('.button__label').textContent = t('copyMarkdown');
+  $('diagnose-source').querySelector('.button__label').textContent = t('actionDiagnose', source.name);
 }
 
 function bindActions() {
@@ -165,6 +177,7 @@ function bindActions() {
   $('insert-test').addEventListener('click', (e) => insertTestText(e.currentTarget));
   $('read-source').addEventListener('click', (e) => readSource(e.currentTarget));
   $('copy-preview').addEventListener('click', (e) => copyPreview(e.currentTarget));
+  $('diagnose-source').addEventListener('click', (e) => diagnoseSource(e.currentTarget));
 }
 
 function init() {

@@ -1,8 +1,13 @@
 /**
- * @file Reads ChatGPT answers from the page.
+ * @file Reads ChatGPT answers from the page, whatever the layout.
  *
- *   extract()                → the latest answer (whole last assistant turn)
+ *   extract()                → the latest answer (every answer block of the last exchange)
  *   extract({ messageId })   → one specific answer (button under each message, step 4)
+ *
+ * Robust to what ChatGPT does in practice:
+ *   - several layouts (see selectors.js LAYOUTS), detected automatically;
+ *   - conversations opened earlier kept in the page under `display: none`;
+ *   - the thread rendered twice (duplicates are dropped by answer id).
  *
  * Refuses while ChatGPT is still writing (STILL_GENERATING) and when there is
  * nothing to read (NO_CONTENT). Returns Markdown plus the user prompt that
@@ -13,64 +18,96 @@ import { RouterError, ErrorCode } from '../../shared/errors.js';
 import { queryFirst } from '../../utils/dom.js';
 import { htmlToMarkdown } from '../../utils/html-to-markdown.js';
 import { hasText } from '../../utils/text.js';
-import { SELECTORS } from './selectors.js';
+import { LAYOUTS, SELECTORS } from './selectors.js';
 
-const everywhere = () => true; // include off-screen messages
+// ---- DOM helpers ----------------------------------------------------------
 
-/** @param {string[]} selectors */
-function queryAll(selectors, root = document) {
+/** Laid out, i.e. not inside a `display: none` / hidden ancestor (cached pages). */
+export function isRendered(el) {
+  if (!el.isConnected) return false;
+  if (typeof el.checkVisibility === 'function') return el.checkVisibility();
+  for (let node = el; node; node = node.parentElement) {
+    if (node.hidden || getComputedStyle(node).display === 'none') return false;
+  }
+  return true;
+}
+
+/** Rendered matches of the first selector that matches anything rendered. */
+function renderedMatches(selectors, root = document) {
   for (const selector of selectors) {
-    const found = [...root.querySelectorAll(selector)];
+    const found = [...root.querySelectorAll(selector)].filter(isRendered);
     if (found.length) return found;
   }
   return [];
 }
 
-// ---- Page state ---------------------------------------------------------
-
-export function isGenerating() {
-  return Boolean(queryFirst(SELECTORS.stopButton) || queryFirst(SELECTORS.streamingMarker, { filter: everywhere }));
+/** Drops elements nested in another match, then duplicates sharing an id. */
+function uniqueBlocks(elements, idAttribute) {
+  const outer = elements.filter((el) => !elements.some((o) => o !== el && o.contains(el)));
+  const seen = new Set();
+  return outer.filter((el) => {
+    const id = el.getAttribute(idAttribute);
+    if (!id) return true;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
 }
 
-export function countAssistantMessages() {
-  return queryAll(SELECTORS.assistantMessage).length;
-}
+const precedes = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 
-// ---- Locating messages --------------------------------------------------
+// ---- Layout detection -------------------------------------------------------
 
 /**
- * The messages forming the answer to read: every assistant message of the
- * last assistant turn (answers may be split around tool calls), or the
- * message with the given id.
- * @returns {Element[]}
+ * @returns {{layout: import('./selectors.js').ChatLayout, replies: Element[]} | null}
+ *   The first layout with at least one rendered answer, and its answers in page order.
  */
-function findAnswerMessages(messageId) {
-  if (messageId) {
-    const message = document.querySelector(`[data-message-id="${CSS.escape(messageId)}"]`);
-    if (!message) throw new RouterError(ErrorCode.NO_CONTENT, `Message ${messageId} not found`);
-    return [message];
+function detectLayout() {
+  for (const layout of LAYOUTS) {
+    const replies = uniqueBlocks(renderedMatches(layout.reply), layout.replyIdAttribute);
+    if (replies.length) return { layout, replies };
   }
-  const messages = queryAll(SELECTORS.assistantMessage);
-  const last = messages.at(-1);
-  if (!last) return [];
-  const turn = SELECTORS.turn.map((s) => last.closest(s)).find(Boolean);
-  return turn ? messages.filter((m) => turn.contains(m)) : [last];
+  return null;
 }
 
-/** Last user message located before `message` in the page. */
-function findPromptFor(message) {
-  const users = queryAll(SELECTORS.userMessage).filter(
-    (user) => user.compareDocumentPosition(message) & Node.DOCUMENT_POSITION_FOLLOWING,
+export function describeLayout() {
+  const found = detectLayout();
+  return { layout: found?.layout.name ?? null, answers: found?.replies.length ?? 0 };
+}
+
+export function isGenerating() {
+  return Boolean(
+    queryFirst(SELECTORS.stopButton) ||
+      queryFirst(SELECTORS.streamingMarker, { filter: isRendered }),
   );
-  return users.at(-1)?.textContent.trim() ?? '';
 }
 
-function toMarkdown(message) {
-  const content = queryFirst(SELECTORS.content, { root: message, filter: everywhere })?.element ?? message;
+// ---- Locating the answer ----------------------------------------------------
+
+/** Every answer block of the exchange containing `reply`, in order. */
+function answerBlocksOf(reply, { layout, replies }) {
+  const turn = reply.closest(layout.turn);
+  return turn ? replies.filter((r) => turn.contains(r)) : [reply];
+}
+
+function findById(messageId, found) {
+  const reply = found?.replies.find((r) => r.getAttribute(found.layout.replyIdAttribute) === messageId);
+  if (!reply) throw new RouterError(ErrorCode.NO_CONTENT, `Message ${messageId} not found`);
+  return reply;
+}
+
+/** Last user prompt located before `reply` in the page. */
+function promptFor(reply, layout) {
+  const prompts = uniqueBlocks(renderedMatches(layout.prompt), '').filter((p) => precedes(p, reply));
+  return prompts.at(-1)?.textContent.trim() ?? '';
+}
+
+function toMarkdown(reply, layout) {
+  const content = queryFirst(layout.content, { root: reply, filter: () => true })?.element ?? reply;
   return htmlToMarkdown(content, { ignore: SELECTORS.ignoreInContent });
 }
 
-// ---- Public API ---------------------------------------------------------
+// ---- Public API ---------------------------------------------------------------
 
 /**
  * @typedef {Object} ExtractedAnswer
@@ -78,6 +115,7 @@ function toMarkdown(message) {
  * @property {string} prompt      The user message that led to this answer.
  * @property {string | null} messageId
  * @property {number} length
+ * @property {string} layout      Which ChatGPT layout was recognised.
  */
 
 /**
@@ -85,20 +123,30 @@ function toMarkdown(message) {
  * @returns {ExtractedAnswer}
  */
 export function extract({ messageId } = {}) {
-  const messages = findAnswerMessages(messageId);
-  const isLatest = !messageId || messages[0] === queryAll(SELECTORS.assistantMessage).at(-1);
-  if (isLatest && isGenerating()) {
+  const found = detectLayout();
+  if (!found) throw new RouterError(ErrorCode.NO_CONTENT, 'No assistant answer recognised on the page');
+
+  // While ChatGPT writes, the newest answer may not be recognisable yet: the
+  // "latest" one found could be the previous answer. Never guess — refuse,
+  // unless a specific older answer was explicitly requested.
+  const reply = messageId ? findById(messageId, found) : found.replies.at(-1);
+  const isLatest = reply.closest(found.layout.turn) === found.replies.at(-1).closest(found.layout.turn);
+  if ((!messageId || isLatest) && isGenerating()) {
     throw new RouterError(ErrorCode.STILL_GENERATING, 'Answer still streaming');
   }
 
-  const markdown = messages.map(toMarkdown).filter(hasText).join('\n\n');
-  if (!hasText(markdown)) throw new RouterError(ErrorCode.NO_CONTENT, 'No assistant answer on the page');
+  const blocks = messageId ? [reply] : answerBlocksOf(reply, found);
+  const markdown = blocks
+    .map((block) => toMarkdown(block, found.layout))
+    .filter(hasText)
+    .join('\n\n');
+  if (!hasText(markdown)) throw new RouterError(ErrorCode.NO_CONTENT, 'Answer is empty');
 
-  const last = messages.at(-1);
   return {
     markdown,
-    prompt: findPromptFor(messages[0]),
-    messageId: last.getAttribute('data-message-id'),
+    prompt: promptFor(blocks[0], found.layout),
+    messageId: blocks.at(-1).getAttribute(found.layout.replyIdAttribute),
     length: markdown.length,
+    layout: found.layout.name,
   };
 }

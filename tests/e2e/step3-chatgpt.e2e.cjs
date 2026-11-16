@@ -135,3 +135,50 @@ test('chained: ChatGPT answer read then delivered to Claude intact', async () =>
   const lines = (text) => text.split('\n').filter((line) => line.trim());
   assert.deepEqual(lines(sent), lines(EXPECTED));
 });
+
+// ---- "Chat / Work" layout (data-turn-key), rolled out per account in 2026 ----
+
+test('turn-key layout → same Markdown; hidden cached conversation ignored', async () => {
+  await openChatGPT({ layout: 'turn-key' });
+  const answer = assertOk(await read());
+  assert.equal(answer.layout, 'turn-key');
+  assert.equal(answer.markdown, EXPECTED);
+  assert.equal(answer.prompt, '/figma Crée un écran de connexion');
+  assert.equal(answer.messageId, 'a2');
+});
+
+test('turn-key layout rendered twice → no duplicated content', async () => {
+  await openChatGPT({ layout: 'turn-key', duplicate: true });
+  assert.equal(assertOk(await read()).markdown, EXPECTED);
+});
+
+test('turn-key layout, specific answer by id', async () => {
+  await openChatGPT({ layout: 'turn-key' });
+  const answer = assertOk(await read({ messageId: 'a1' }));
+  assert.equal(answer.markdown, 'Première réponse.');
+  assert.equal(answer.prompt, 'Bonjour');
+});
+
+test('turn-key layout while writing → STILL_GENERATING, never the previous answer', async () => {
+  await openChatGPT({ layout: 'turn-key', streaming: true });
+  const res = await read();
+  assert.equal(res.ok, false);
+  assert.equal(res.error.code, 'STILL_GENERATING');
+});
+
+test('popup diagnostic: layout and markers, without any conversation text', async () => {
+  await openChatGPT({ layout: 'turn-key' });
+  const popup = await h.context.newPage();
+  await popup.goto(`chrome-extension://${h.extensionId}/src/popup/popup.html`);
+  await popup.click('#diagnose-source');
+  await popup.locator('#feedback[data-tone="success"]').waitFor();
+
+  const text = await popup.textContent('#preview-text');
+  assert.match(text, /Layout reconnu : turn-key — réponses : 2/);
+  assert.match(text, /\[data-chatgpt-selection-message-id="a2"\]/);
+  assert.match(text, /txt:\d+/);
+  for (const secret of ['optimisé', 'Première réponse', 'frac', 'Bonjour', 'Figma Help', 'Ancienne']) {
+    assert.ok(!text.includes(secret), `diagnostic leaks "${secret}"`);
+  }
+  await popup.close();
+});

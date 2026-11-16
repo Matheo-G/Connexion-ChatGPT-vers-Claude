@@ -5,6 +5,15 @@
   header with "Copier le code", citation pills, KaTeX, action bar, composer
   with stop/send button).
 
+  Two layouts, like the real site (served per account):
+    default            classic "author-role" layout (article turns, .markdown);
+    layout: 'turn-key' "Chat / Work" layout rolled out from Sept. 2026
+                       ([data-turn-key] items, user bubble, reply id, no .markdown,
+                       math as data-math-source, stop button without data-testid).
+                       Also reproduces its traps: an earlier conversation kept in
+                       the page under display:none (after the visible one), and
+                       `duplicate: true` renders the thread twice.
+
   Scenario knobs (window.__FIXTURE__, injected by the harness):
     empty      no conversation yet
     streaming  the last answer is being written; finishes after `streamMs`
@@ -26,7 +35,7 @@
   <body>
     <main>
       <div id="thread"></div>
-      <form id="composer">
+      <form id="composer" data-chatgpt-composer="">
         <div id="prompt-textarea" contenteditable="true"></div>
         <button id="composer-button" type="button" data-testid="send-button" aria-label="Envoyer le prompt">↑</button>
       </form>
@@ -84,11 +93,55 @@ frame.<span class="hljs-property">layoutMode</span> = <span class="hljs-string">
 
       function setStreaming(on) {
         const button = document.getElementById('composer-button');
-        button.dataset.testid = on ? 'stop-button' : 'send-button';
-        button.setAttribute('aria-label', on ? 'Arrêter la diffusion' : 'Envoyer le prompt');
+        if (cfg.layout === 'turn-key') delete button.dataset.testid; // no test ids in this layout
+        else button.dataset.testid = on ? 'stop-button' : 'send-button';
+        button.setAttribute('aria-label', on ? 'Arrêter la génération' : 'Envoyer le prompt');
       }
 
-      if (!cfg.empty) {
+      // ---- "turn-key" layout ------------------------------------------------
+      function turnKeyItem(key, prompt, replyHtml, replyId) {
+        const item = document.createElement('div');
+        item.dataset.turnKey = key;
+        item.innerHTML =
+          `<div data-content-search-unit-key="c:${key}:user" data-chatgpt-search-message-ids="${key}">` +
+          `<div data-user-message-bubble="true"><div>${prompt}</div></div></div>` +
+          '<h4 class="sr-only" data-conversation-role="assistant">ChatGPT a dit :</h4>' +
+          (replyId
+            ? `<div data-content-search-unit-key="c:${key}:assistant" data-chatgpt-search-message-ids="${replyId}">` +
+              `<div data-chatgpt-selection-message-id="${replyId}">${replyHtml}</div></div>` +
+              '<div class="turn-action-controls"><button aria-label="Copier">⧉</button><button aria-label="Bonne réponse">👍</button></div>'
+            : `<div class="streaming-reply">${replyHtml}</div>`);
+        return item;
+      }
+
+      function renderTurnKey() {
+        const rich = document.getElementById('rich-answer').innerHTML
+          .replace(/<span class="katex">[\s\S]*?<\/span><\/span>/, '<span data-math-source="\\frac{16}{9}">16/9</span>');
+        const target = document.createElement('div');
+        target.setAttribute('data-chatgpt-conversation-selection-target', '');
+        const list = document.createElement('div');
+        target.append(list);
+        thread.append(target);
+
+        list.append(turnKeyItem('u1', 'Bonjour', '<p>Première réponse.</p>', 'a1'));
+        if (cfg.streaming) {
+          list.append(turnKeyItem('u2', '/figma Crée un écran de connexion', '<p>Écran de con</p>', null));
+          setStreaming(true);
+        } else {
+          list.append(turnKeyItem('u2', '/figma Crée un écran de connexion', rich, 'a2'));
+        }
+        if (cfg.duplicate) thread.append(target.cloneNode(true));
+
+        // An earlier conversation, kept hidden by ChatGPT — placed last on purpose.
+        const cached = document.createElement('main');
+        cached.style.display = 'none';
+        cached.append(turnKeyItem('old', 'Ancienne question', '<p>Ancienne conversation.</p>', 'old-a'));
+        document.body.append(cached);
+      }
+
+      if (cfg.layout === 'turn-key') {
+        if (!cfg.empty) renderTurnKey();
+      } else if (!cfg.empty) {
         addTurn('user', 'Bonjour', 'u1');
         addTurn('assistant', '<p>Première réponse.</p>', 'a1');
         addTurn('user', '/figma Crée un écran de connexion', 'u2');

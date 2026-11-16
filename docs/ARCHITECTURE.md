@@ -89,11 +89,17 @@ Tous les sélecteurs sont dans `providers/claude/selectors.js`.
 
 Côté page (`providers/chatgpt/reader.js`) :
 
-- **Quelle réponse ?** Tous les messages assistant du **dernier tour** de conversation, joints dans l'ordre : une réponse peut être découpée autour d'un appel d'outil. Avec `messageId`, une réponse précise, pour le bouton placé sous chaque message à l'étape 4.
-- **En cours d'écriture ?** Bouton « Stop » du composer, ou marqueur de streaming → `STILL_GENERATING`. Les réponses plus anciennes restent lisibles.
+- **Plusieurs mises en page** (`LAYOUTS` dans `selectors.js`), détectées automatiquement. ChatGPT sert des structures différentes selon les comptes :
+  - `turn-key` : mise en page « Chat / Work » déployée depuis septembre 2026 (`[data-turn-key]`, `[data-user-message-bubble]`, `[data-chatgpt-selection-message-id]`, sans `.markdown`) ;
+  - `author-role` : mise en page classique (`[data-message-author-role]`, `.markdown`).
+- **Pièges gérés** : conversations précédentes gardées dans la page sous `display: none` (seuls les éléments affichés comptent), fil rendu en double (dédoublonnage par identifiant).
+- **Quelle réponse ?** Tous les blocs de réponse du **dernier échange**, joints dans l'ordre : une réponse peut être découpée autour d'un appel d'outil. Avec `messageId`, une réponse précise, pour le bouton placé sous chaque message à l'étape 4.
+- **En cours d'écriture ?** Bouton « Stop » du composer (avec ou sans `data-testid`), ou marqueur de streaming → `STILL_GENERATING`. On refuse toujours de lire la « dernière » réponse pendant l'écriture : la réponse en cours peut ne pas encore être reconnaissable, et on enverrait sans le dire la précédente. Une réponse plus ancienne, demandée par identifiant, reste lisible.
 - **Résultat** : `{ markdown, prompt, messageId, length }`. `prompt` est le message utilisateur qui a précédé la réponse ; il servira à détecter `/figma`, `/code`… à l'étape 7.
 
-`utils/html-to-markdown.js` (générique, testé unitairement) convertit le HTML rendu en Markdown : titres, gras/italique/barré, code inline, blocs de code avec langage (sans l'en-tête « Copier le code »), listes imbriquées et numérotées, citations, tableaux, liens sûrs, images http, maths KaTeX (`$…$`, `$$…$$`). L'interface du site est ignorée : boutons, SVG, pastilles de citation, textes `sr-only`.
+**Diagnostic anonyme** (`providers/chatgpt/diagnostics.js`, `utils/dom-skeleton.js`), bouton dans la popup. Il copie la mise en page reconnue, le nombre d'éléments trouvés pour chaque marqueur et le squelette des derniers échanges : balises, classes, attributs techniques, longueur des textes. **Jamais le texte**, et les valeurs d'attributs qui pourraient contenir du contenu sont masquées. C'est ce qu'il faut envoyer quand ChatGPT change de structure.
+
+`utils/html-to-markdown.js` (générique, testé unitairement) convertit le HTML rendu en Markdown : titres, gras/italique/barré, code inline, blocs de code avec langage (sans l'en-tête « Copier le code »), listes imbriquées et numérotées, citations, tableaux, liens sûrs, images http, maths KaTeX ou `data-math-source` (`$…$`, `$$…$$`), lignes de code de type CodeMirror. L'interface du site est ignorée : boutons, SVG, pastilles de citation, textes `sr-only`.
 
 ## Tests
 

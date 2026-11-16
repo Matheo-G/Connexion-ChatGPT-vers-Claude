@@ -118,3 +118,18 @@ test('extra ignore selectors drop site UI', () => {
 test('empty content gives an empty string', () => {
   assert.equal(md('<div> <p>  </p> </div>'), '');
 });
+
+test('math from data-math-source: inline span and display block', () => {
+  const html = '<p>Aire <span data-math-source="\\pi r^2">πr²</span>.</p><div data-math-source="a^2 + b^2 = c^2">rendu</div>';
+  assert.equal(md(html), 'Aire $\\pi r^2$.\n\n$$\na^2 + b^2 = c^2\n$$');
+});
+
+test('CodeMirror-style code lines are joined with newlines', () => {
+  const html = '<pre data-language="python"><div class="cm-content"><div class="cm-line">def f():</div><div class="cm-line">    return 1</div></div></pre>';
+  assert.equal(md(html), '```python\ndef f():\n    return 1\n```');
+});
+
+test('code block without <code>: the copy button is dropped (known limit: a bare language label is kept)', () => {
+  const html = '<pre><div>python</div><button>Copier le code</button><div>print("ok")</div></pre>';
+  assert.equal(md(html), '```\npythonprint("ok")\n```');
+});

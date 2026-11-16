@@ -9,6 +9,7 @@ import { prepareTarget } from './target-session.js';
 import { getStatus } from './status.js';
 import { deliverText } from './delivery.js';
 import { readSource } from './source-session.js';
+import { diagnoseProvider } from './diagnostics.js';
 
 const log = createLogger('router');
 
@@ -26,6 +27,8 @@ export const backgroundHandlers = {
 
   [MessageType.READ_SOURCE]: ({ providerId = 'chatgpt', messageId }, sender) =>
     readSource(providerId, { messageId, tabId: sender.tab?.id }),
+
+  [MessageType.DIAGNOSE]: ({ providerId = 'chatgpt' }) => diagnoseProvider(providerId),
 
   [MessageType.GET_STATUS]: () => getStatus(),
 };

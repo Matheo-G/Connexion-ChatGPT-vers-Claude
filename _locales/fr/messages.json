@@ -83,6 +83,17 @@
   "copied": {
     "message": "Copié"
   },
+  "actionDiagnose": {
+    "message": "Copier le diagnostic $NAME$ (anonyme)",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "diagnosticCopied": {
+    "message": "Diagnostic copié : collez-le dans la conversation de développement."
+  },
   "testInsertText": {
     "message": "✅ Test Mathéo AI Router\nSi vous lisez ce texte dans Claude, l'insertion fonctionne.\nMise en forme : **gras**, `code`, et une liste :\n- point 1\n- point 2\nRien n'a été envoyé : vous pouvez l'effacer."
   },

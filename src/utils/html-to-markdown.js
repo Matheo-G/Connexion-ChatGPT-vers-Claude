@@ -7,9 +7,10 @@
  * without any API.
  *
  * Supported: headings, paragraphs, line breaks, bold/italic/strike, inline
- * code, fenced code blocks (with language, robust to ChatGPT's code header),
- * ordered/unordered/nested lists, blockquotes, tables, links, images, rules,
- * KaTeX math (inline $…$ and display $$…$$).
+ * code, fenced code blocks (with language, robust to ChatGPT's code header
+ * and to CodeMirror-style line elements), ordered/unordered/nested lists,
+ * blockquotes, tables, links, images, rules, math (KaTeX annotations or
+ * `data-math-source`; inline $…$, display $$…$$).
  *
  * Pure DOM walking (no innerText, no layout): works in content scripts and
  * in unit tests with a lightweight DOM.
@@ -35,6 +36,7 @@ const TEXT_NODE = 3;
  */
 export function htmlToMarkdown(root, { ignore = [] } = {}) {
   const ctx = { ignore: [...ALWAYS_IGNORED, ...ignore].join(',') };
+  ctx.isIgnored = (node) => isIgnored(node, ctx);
   return joinBlocks(renderBlocks(root, ctx)).trim();
 }
 
@@ -72,7 +74,7 @@ function renderBlock(el, ctx) {
   if (/^H[1-6]$/.test(tag)) return heading(el, ctx);
   switch (tag) {
     case 'PRE':
-      return [codeBlock(el)];
+      return [codeBlock(el, ctx)];
     case 'UL':
     case 'OL':
       return [list(el, ctx)];
@@ -93,17 +95,36 @@ function heading(el, ctx) {
   return text ? [`${'#'.repeat(Number(el.tagName[1]))} ${text}`] : [];
 }
 
-function codeBlock(pre) {
+function codeBlock(pre, ctx) {
   const code = pre.querySelector('code');
-  const source = (code ?? pre).textContent.replace(/\n$/, '');
-  const language = detectLanguage(code);
+  const source = codeText(code ?? pre, ctx).replace(/\n$/, '');
+  const language = detectLanguage(code ?? pre);
   const fence = fenceFor(source, '`', 3);
   return `${fence}${language}\n${source}\n${fence}`;
 }
 
-function detectLanguage(code) {
-  const match = code?.className?.match?.(/(?:^|\s)(?:language|lang)-([\w#+.-]+)/);
-  return match ? match[1] : '';
+/**
+ * Raw code text. Editors such as CodeMirror render one element per line
+ * (no newline characters), so those lines are joined explicitly. Without a
+ * <code> element, the site's UI (language label, copy button) is skipped.
+ */
+function codeText(el, ctx) {
+  const lines = el.querySelectorAll('.cm-line');
+  if (lines.length) return [...lines].map((line) => line.textContent).join('\n');
+  if (el.tagName === 'CODE') return el.textContent;
+  return rawText(el, ctx);
+}
+
+function rawText(node, ctx) {
+  if (node.nodeType === TEXT_NODE) return node.textContent;
+  if (node.nodeType !== ELEMENT_NODE || ctx.isIgnored(node)) return '';
+  return [...node.childNodes].map((child) => rawText(child, ctx)).join('');
+}
+
+function detectLanguage(el) {
+  const fromClass = el?.className?.match?.(/(?:^|\s)(?:language|lang)-([\w#+.-]+)/);
+  const fromData = el?.getAttribute?.('data-language');
+  return fromClass?.[1] ?? fromData ?? '';
 }
 
 function list(el, ctx, depth = 0) {
@@ -218,17 +239,21 @@ function image(img) {
   return `![${img.getAttribute('alt') ?? ''}](${src})`;
 }
 
-// ---- Math (KaTeX) ----------------------------------------------------------
+// ---- Math (KaTeX annotations, or data-math-source) -------------------------
 
 function isMath(el) {
-  return el.classList?.contains('katex');
+  return Boolean(el.classList?.contains('katex') || el.hasAttribute?.('data-math-source'));
 }
 
+/** Display (block) formula: KaTeX display wrapper, or a math source on a block element. */
 function isDisplayMath(el) {
-  return el.classList?.contains('katex-display');
+  if (el.classList?.contains('katex-display')) return true;
+  return Boolean(el.hasAttribute?.('data-math-source') && BLOCK_TAGS.has(el.tagName));
 }
 
 function tex(el) {
+  const source = el.getAttribute('data-math-source') ?? el.querySelector('[data-math-source]')?.getAttribute('data-math-source');
+  if (source) return source.trim();
   const annotation = el.querySelector('annotation[encoding="application/x-tex"]');
   return (annotation?.textContent ?? el.textContent).trim();
 }
