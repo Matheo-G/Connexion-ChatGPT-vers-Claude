@@ -38,6 +38,8 @@ export const MessageType = Object.freeze({
   // --- UI / diagnostics -------------------------------------------------
   /** popup → background: open or focus a target without sending (debug) */
   OPEN_TARGET: 'ui/open-target',
+  /** popup → background: read the latest answer of a source AI (preview) */
+  READ_SOURCE: 'ui/read-source',
   /** popup → background: get current connection status */
   GET_STATUS: 'ui/get-status',
 });

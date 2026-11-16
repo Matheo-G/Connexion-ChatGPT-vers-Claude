@@ -83,10 +83,22 @@ Côté page (`providers/claude/writer.js`) :
 
 Tous les sélecteurs sont dans `providers/claude/selectors.js`.
 
+## Lecture d'une IA source (étape 3)
+
+`background/source-session.js → readSource(providerId, { tabId, messageId })` choisit l'onglet source : celui de l'expéditeur s'il appartient bien au site, sinon le meilleur onglet ouvert. Il envoie ensuite `SOURCE_EXTRACT` à l'adaptateur.
+
+Côté page (`providers/chatgpt/reader.js`) :
+
+- **Quelle réponse ?** Tous les messages assistant du **dernier tour** de conversation, joints dans l'ordre : une réponse peut être découpée autour d'un appel d'outil. Avec `messageId`, une réponse précise, pour le bouton placé sous chaque message à l'étape 4.
+- **En cours d'écriture ?** Bouton « Stop » du composer, ou marqueur de streaming → `STILL_GENERATING`. Les réponses plus anciennes restent lisibles.
+- **Résultat** : `{ markdown, prompt, messageId, length }`. `prompt` est le message utilisateur qui a précédé la réponse ; il servira à détecter `/figma`, `/code`… à l'étape 7.
+
+`utils/html-to-markdown.js` (générique, testé unitairement) convertit le HTML rendu en Markdown : titres, gras/italique/barré, code inline, blocs de code avec langage (sans l'en-tête « Copier le code »), listes imbriquées et numérotées, citations, tableaux, liens sûrs, images http, maths KaTeX (`$…$`, `$$…$$`). L'interface du site est ignorée : boutons, SVG, pastilles de citation, textes `sr-only`.
+
 ## Tests
 
 - `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
-- `npm run test:e2e` : Chromium avec l'extension chargée. claude.ai et chatgpt.com sont servis par un serveur HTTPS local (`--host-resolver-rules`), donc pas de réseau ni de compte. La fixture Claude utilise un **vrai éditeur Tiptap/ProseMirror** et simule le chargement lent, la déconnexion, la limite d'usage, un collage ignoré, un bouton cassé… Nécessite Playwright, et `npm install` pour les dépendances de développement (Tiptap, esbuild).
+- `npm run test:e2e` : Chromium avec l'extension chargée. claude.ai et chatgpt.com sont servis par un serveur HTTPS local (`--host-resolver-rules`), donc pas de réseau ni de compte. La fixture Claude utilise un **vrai éditeur Tiptap/ProseMirror** et simule le chargement lent, la déconnexion, la limite d'usage, un collage ignoré, un bouton cassé… La fixture ChatGPT reproduit la structure de chatgpt.com : tours, en-tête de code, KaTeX, streaming, réponse découpée. Nécessite Playwright, et `npm install` pour les dépendances de développement (Tiptap, esbuild, linkedom).
 
 ## Flux V1 (cible)
 
@@ -111,8 +123,8 @@ Tous les sélecteurs sont dans `providers/claude/selectors.js`.
 | 0 | Fondations : manifest, structure, logger, erreurs, messages, i18n, design tokens, icônes | ✅ |
 | 1 | Messagerie + gestion des onglets + injection + handshake | ✅ |
 | 2 | Adaptateur Claude (insertion + envoi) | ✅ |
-| 3 | Adaptateur ChatGPT (extraction + Markdown) | ⏳ |
-| 4 | Pipeline + bouton injecté → **V1** | |
+| 3 | Adaptateur ChatGPT (extraction + Markdown) | ✅ |
+| 4 | Pipeline + bouton injecté → **V1** | ⏳ |
 | 5 | Popup + options | |
 | 6 | Robustesse et cas limites | |
 | 7 | Moteur de workflows | |

@@ -61,6 +61,28 @@
   "actionInsertTest": {
     "message": "Insérer un texte de test"
   },
+  "actionReadSource": {
+    "message": "Lire la dernière réponse de $NAME$",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
+  },
+  "readSourceResult": {
+    "message": "$COUNT$ caractères lus",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      }
+    }
+  },
+  "copyMarkdown": {
+    "message": "Copier"
+  },
+  "copied": {
+    "message": "Copié"
+  },
   "testInsertText": {
     "message": "✅ Test Mathéo AI Router\nSi vous lisez ce texte dans Claude, l'insertion fonctionne.\nMise en forme : **gras**, `code`, et une liste :\n- point 1\n- point 2\nRien n'a été envoyé : vous pouvez l'effacer."
   },

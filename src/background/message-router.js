@@ -8,6 +8,7 @@ import { createLogger } from '../utils/logger.js';
 import { prepareTarget } from './target-session.js';
 import { getStatus } from './status.js';
 import { deliverText } from './delivery.js';
+import { readSource } from './source-session.js';
 
 const log = createLogger('router');
 
@@ -22,6 +23,9 @@ export const backgroundHandlers = {
 
   [MessageType.DELIVER_TEXT]: ({ providerId = 'claude', text, ...options }, sender) =>
     deliverText(providerId, text, { ...options, sourceTabId: sender.tab?.id }),
+
+  [MessageType.READ_SOURCE]: ({ providerId = 'chatgpt', messageId }, sender) =>
+    readSource(providerId, { messageId, tabId: sender.tab?.id }),
 
   [MessageType.GET_STATUS]: () => getStatus(),
 };

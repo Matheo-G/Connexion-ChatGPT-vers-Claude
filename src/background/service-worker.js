@@ -18,6 +18,7 @@ import { prepareTarget } from './target-session.js';
 import { ensureContentScript, pingTab } from './injector.js';
 import { getStatus } from './status.js';
 import { deliverText } from './delivery.js';
+import { readSource } from './source-session.js';
 
 const log = createLogger('service-worker');
 
@@ -37,11 +38,13 @@ chrome.runtime.onStartup.addListener(() => {
  * (chrome://extensions → "service worker"):
  *   await aiRouter.prepareTarget('claude', { activate: false })
  *   await aiRouter.deliverText('claude', 'Bonjour', { autoSend: false })
+ *   await aiRouter.readSource('chatgpt')
  *   await aiRouter.getStatus()
  */
 globalThis.aiRouter = Object.freeze({
   prepareTarget,
   deliverText,
+  readSource,
   ensureContentScript,
   pingTab,
   getStatus,

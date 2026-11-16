@@ -1,19 +1,30 @@
 /**
  * @file ChatGPT DOM adapter (runs inside chatgpt.com).
- *
- * Step 1: only describes the page for the handshake.
- * Step 3 adds SOURCE_EXTRACT; step 4 mounts the "Send to Claude" button.
+ * Wires the reader to the message bus; DOM details live in reader.js / selectors.js.
+ * Step 4 adds the "Send to Claude" button (mount.js).
  */
+
+import { MessageType } from '../../shared/message-types.js';
+import { extract, isGenerating, countAssistantMessages } from './reader.js';
 
 /**
  * @param {{log: ReturnType<import('../../utils/logger.js').createLogger>}} context
  * @returns {import('../../content/runtime.js').ProviderAdapter}
  */
 export function createAdapter({ log }) {
-  log.debug('ChatGPT adapter created');
   return {
-    describe: () => ({ path: location.pathname }),
-    handlers: {},
+    describe: () => ({
+      path: location.pathname,
+      generating: isGenerating(),
+      answers: countAssistantMessages(),
+    }),
+    handlers: {
+      [MessageType.SOURCE_EXTRACT]: (payload) => {
+        const answer = extract(payload);
+        log.info(`Answer extracted (${answer.length} chars)`);
+        return answer;
+      },
+    },
     destroy() {},
   };
 }

@@ -54,7 +54,7 @@ function respond(url, control) {
     return { contentType: 'text/javascript', body: fs.readFileSync(file) };
   }
   if (url.hostname !== 'claude.ai') {
-    return html(fs.readFileSync(path.join(FIXTURES, 'chatgpt.html'), 'utf8'));
+    return withConfig(fs.readFileSync(path.join(FIXTURES, 'chatgpt.html'), 'utf8'), control.chatgpt);
   }
   if (url.pathname.startsWith('/login')) {
     return html(fs.readFileSync(path.join(FIXTURES, 'claude-login.html'), 'utf8'));
@@ -62,12 +62,16 @@ function respond(url, control) {
   if (control.loggedOut) {
     return { status: 302, headers: { location: 'https://claude.ai/login' } };
   }
-  const page = fs.readFileSync(path.join(FIXTURES, 'claude.html'), 'utf8');
-  const config = `<script>window.__FIXTURE__ = ${JSON.stringify(control.fixture)};</script>`;
-  return html(page.replace('<head>', `<head>${config}`));
+  return withConfig(fs.readFileSync(path.join(FIXTURES, 'claude.html'), 'utf8'), control.fixture);
 }
 
 const html = (body) => ({ contentType: 'text/html', body });
+
+/** Injects the scenario knobs as window.__FIXTURE__ before any page script. */
+function withConfig(page, config) {
+  const script = `<script>window.__FIXTURE__ = ${JSON.stringify(config ?? {})};</script>`;
+  return html(page.replace('<head>', `<head>${script}`));
+}
 
 /** Self-signed certificate, generated once into the build folder. */
 function certificate() {
@@ -100,7 +104,7 @@ function startFixtureServer(control) {
  *   context: import('playwright').BrowserContext,
  *   sw: import('playwright').Worker,
  *   extensionId: string,
- *   control: { hang: RegExp | null, fixture: object, loggedOut: boolean },
+ *   control: { hang: RegExp | null, fixture: object, chatgpt: object, loggedOut: boolean },
  *   sendMessage: (message: object) => Promise<any>,
  *   evalSW: (fn: Function, arg?: any) => Promise<any>,
  *   pagesOf: (host: string) => import('playwright').Page[],
@@ -115,9 +119,10 @@ async function launch() {
    * Live knobs for the stubbed sites:
    *   hang      RegExp — matching requests are never answered;
    *   fixture   window.__FIXTURE__ of the Claude page (see fixtures/src/claude-composer.js);
+   *   chatgpt   window.__FIXTURE__ of the ChatGPT page (see fixtures/chatgpt.html);
    *   loggedOut every Claude page redirects to /login.
    */
-  const control = { hang: null, fixture: {}, loggedOut: false };
+  const control = { hang: null, fixture: {}, chatgpt: {}, loggedOut: false };
   const server = await startFixtureServer(control);
   const { port } = server.address();
   const rules = HOSTS.map((host) => `MAP ${host}:443 127.0.0.1:${port}`).join(', ');

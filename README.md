@@ -2,7 +2,7 @@
 
 Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic envoie la dernière réponse de ChatGPT vers Claude, sans copier-coller, sans API, sans coût supplémentaire.
 
-> **État :** étape 2 — l'extension sait ouvrir Claude, y insérer un texte et l'envoyer (testable depuis la popup avec « Insérer un texte de test »). La lecture des réponses ChatGPT arrive à l'étape 3.
+> **État :** étape 3 — l'extension sait lire la dernière réponse de ChatGPT en Markdown, ouvrir Claude, y insérer un texte et l'envoyer. Tout est testable depuis la popup. Le bouton « Envoyer à Claude » dans ChatGPT arrive à l'étape 4.
 
 ## Installation (mode développeur)
 

@@ -39,8 +39,19 @@
             <span class="button__icon" data-icon="send"></span>
             <span class="button__label"></span>
           </button>
+          <button class="button button--ghost button--wide" id="read-source" type="button">
+            <span class="button__icon" data-icon="sparkles"></span>
+            <span class="button__label"></span>
+          </button>
         </div>
         <p class="feedback" id="feedback" role="status" hidden></p>
+        <div class="preview" id="preview" hidden>
+          <pre class="preview__text" id="preview-text" tabindex="0"></pre>
+          <button class="button button--ghost preview__copy" id="copy-preview" type="button">
+            <span class="button__icon" data-icon="copy" data-icon-size="14"></span>
+            <span class="button__label"></span>
+          </button>
+        </div>
       </section>
 
       <footer class="muted" id="version"></footer>

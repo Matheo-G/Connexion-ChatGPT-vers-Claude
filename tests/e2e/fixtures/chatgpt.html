@@ -1,6 +1,118 @@
 <!doctype html>
-<!-- Minimal stand-in for chatgpt.com. Enriched with real conversation DOM at step 3. -->
-<html lang="en">
-  <head><meta charset="utf-8" /><title>ChatGPT (fixture)</title></head>
-  <body><main id="app">ChatGPT fixture</main></body>
+<!--
+  Stand-in for chatgpt.com: a conversation whose DOM mirrors ChatGPT's
+  (turn articles, data-message-author-role, ".markdown" content, code block
+  header with "Copier le code", citation pills, KaTeX, action bar, composer
+  with stop/send button).
+
+  Scenario knobs (window.__FIXTURE__, injected by the harness):
+    empty      no conversation yet
+    streaming  the last answer is being written; finishes after `streamMs`
+               (omit streamMs to stream forever)
+    split      the last turn holds two assistant messages (around a tool call)
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>ChatGPT (fixture)</title>
+    <style>
+      body { font-family: system-ui; margin: 2rem; max-width: 760px; }
+      .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      article { border-bottom: 1px solid #eee; padding: 12px 0; }
+      pre { background: #f4f4f4; padding: 8px; border-radius: 8px; }
+      .actions button { font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div id="thread"></div>
+      <form id="composer">
+        <div id="prompt-textarea" contenteditable="true"></div>
+        <button id="composer-button" type="button" data-testid="send-button" aria-label="Envoyer le prompt">↑</button>
+      </form>
+    </main>
+
+    <template id="rich-answer">
+      <h2>Écran de connexion</h2>
+      <p>Voici un prompt <strong>optimisé</strong> pour <em>Figma</em>, avec <code>Auto Layout</code>. Source <a href="https://help.figma.com">Figma Help</a><span data-testid="webpage-citation-pill"><a href="https://lemonde.fr">lemonde.fr</a></span>.</p>
+      <pre class="overflow-visible!"><div class="contain-inline-size rounded-2xl"><div class="flex items-center">javascript</div><div class="sticky top-9"><button aria-label="Copier"><svg width="10" height="10"></svg>Copier le code</button></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-javascript"><span><span class="hljs-keyword">const</span> frame = figma.<span class="hljs-title">createFrame</span>();
+frame.<span class="hljs-property">layoutMode</span> = <span class="hljs-string">"VERTICAL"</span>;</span></code></div></div></pre>
+      <ul>
+        <li>Champs
+          <ul><li>Email</li><li>Mot de passe</li></ul>
+        </li>
+        <li>Bouton <strong>Continuer</strong></li>
+      </ul>
+      <table>
+        <thead><tr><th>Élément</th><th>Espacement</th></tr></thead>
+        <tbody><tr><td>Champ</td><td>16 px</td></tr><tr><td>Bouton</td><td>24 px</td></tr></tbody>
+      </table>
+      <p>Ratio : <span class="katex"><span class="katex-mathml"><math><semantics><mrow></mrow><annotation encoding="application/x-tex">\frac{16}{9}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true">16/9</span></span></p>
+      <blockquote><p>Garde une palette sobre.</p></blockquote>
+    </template>
+
+    <script>
+      const cfg = window.__FIXTURE__ || {};
+      const thread = document.getElementById('thread');
+      let turn = 0;
+
+      function addTurn(role, html, id) {
+        turn += 1;
+        const article = document.createElement('article');
+        article.dataset.testid = `conversation-turn-${turn}`;
+        const label = role === 'user' ? 'Vous avez dit :' : 'ChatGPT a dit :';
+        const content = role === 'user'
+          ? `<div class="whitespace-pre-wrap">${html}</div>`
+          : `<div class="markdown prose dark:prose-invert w-full break-words">${html}</div>`;
+        article.innerHTML =
+          `<h6 class="sr-only">${label}</h6>` +
+          `<div data-message-author-role="${role}" data-message-id="${id}">${content}</div>` +
+          (role === 'assistant'
+            ? '<div class="actions"><button data-testid="copy-turn-action-button" aria-label="Copier">⧉</button><button data-testid="good-response-turn-action-button" aria-label="Bonne réponse">👍</button></div>'
+            : '');
+        thread.append(article);
+        return article;
+      }
+
+      function addAssistantPart(article, html, id) {
+        const message = document.createElement('div');
+        message.dataset.messageAuthorRole = 'assistant';
+        message.dataset.messageId = id;
+        message.innerHTML = `<div class="markdown prose">${html}</div>`;
+        article.querySelector('.actions').before(message);
+      }
+
+      function setStreaming(on) {
+        const button = document.getElementById('composer-button');
+        button.dataset.testid = on ? 'stop-button' : 'send-button';
+        button.setAttribute('aria-label', on ? 'Arrêter la diffusion' : 'Envoyer le prompt');
+      }
+
+      if (!cfg.empty) {
+        addTurn('user', 'Bonjour', 'u1');
+        addTurn('assistant', '<p>Première réponse.</p>', 'a1');
+        addTurn('user', '/figma Crée un écran de connexion', 'u2');
+        const rich = document.getElementById('rich-answer').innerHTML;
+
+        if (cfg.split) {
+          const article = addTurn('assistant', '<p>Je cherche des références…</p>', 'a2-part1');
+          addAssistantPart(article, rich, 'a2-part2');
+        } else if (cfg.streaming) {
+          const article = addTurn('assistant', '<p>Écran de con</p>', 'a2');
+          article.querySelector('.markdown').classList.add('result-streaming');
+          setStreaming(true);
+          if (cfg.streamMs) {
+            setTimeout(() => {
+              const markdown = article.querySelector('.markdown');
+              markdown.innerHTML = rich;
+              markdown.classList.remove('result-streaming');
+              setStreaming(false);
+            }, cfg.streamMs);
+          }
+        } else {
+          addTurn('assistant', rich, 'a2');
+        }
+      }
+    </script>
+  </body>
 </html>
