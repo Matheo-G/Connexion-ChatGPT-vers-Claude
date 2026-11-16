@@ -144,3 +144,27 @@ test('options: patience can be chosen', async () => {
   assert.equal(await h.evalSW(async () => (await chrome.storage.sync.get('settings')).settings.patience), 'patient');
   await options.close();
 });
+
+test('popup never spins forever: background silent → "Indisponible", exact error, retry', async () => {
+  const popup = await h.context.newPage();
+  // Simulate a service worker that does not answer the status request.
+  await popup.addInitScript(() => {
+    const original = chrome.runtime.sendMessage.bind(chrome.runtime);
+    window.__failStatus = true;
+    chrome.runtime.sendMessage = (message, ...rest) =>
+      window.__failStatus && message?.type === 'ui/get-status'
+        ? Promise.reject(new Error('Could not establish connection. Receiving end does not exist.'))
+        : original(message, ...rest);
+  });
+  await popup.goto(`chrome-extension://${h.extensionId}/src/popup/popup.html`);
+
+  await popup.locator('.provider[data-state="unavailable"]').first().waitFor({ timeout: 10_000 });
+  assert.match(await popup.textContent('#status-hint'), /ne répond pas/);
+  assert.match(await popup.textContent('.status-hint__detail'), /Receiving end does not exist/);
+
+  await popup.evaluate(() => (window.__failStatus = false));
+  await popup.click('.status-hint__retry');
+  await popup.locator('.provider[data-state="no-tab"]').first().waitFor();
+  assert.equal(await popup.isHidden('#status-hint'), true);
+  await popup.close();
+});

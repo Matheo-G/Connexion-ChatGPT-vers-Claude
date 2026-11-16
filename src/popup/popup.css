@@ -93,6 +93,10 @@ body {
   background: var(--color-warning);
 }
 
+[data-state='unavailable'] .dot {
+  background: var(--color-danger);
+}
+
 [data-state='no-tab'] .dot {
   background: var(--color-border);
 }
@@ -324,4 +328,24 @@ body {
   color: var(--color-text);
   font-size: var(--text-xs);
   line-height: 1.45;
+}
+
+.status-hint[data-tone='error'] {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  background: color-mix(in srgb, var(--color-danger) 10%, transparent);
+}
+
+.status-hint__detail {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--color-text-muted);
+  word-break: break-word;
+  user-select: all;
+}
+
+.status-hint__retry {
+  align-self: flex-start;
+  min-height: 28px;
 }

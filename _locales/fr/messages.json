@@ -468,5 +468,11 @@
   },
   "optChatGPTCopy": {
     "message": "Copier les instructions"
+  },
+  "stateUnavailable": {
+    "message": "Indisponible"
+  },
+  "statusUnavailableHint": {
+    "message": "Le cœur de l'extension ne répond pas. Réessayez ; si ça persiste, ouvrez chrome://extensions, cliquez ⟳ sur Mathéo AI Router et regardez le bouton « Erreurs ». Message technique :"
   }
 }
