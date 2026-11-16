@@ -146,6 +146,29 @@ Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interf
 - **Bilan de santé** : chaque adaptateur indique `recognized`. ChatGPT : une page de conversation sans mise en page connue. Claude : une page de conversation sans éditeur. La popup affiche alors « Page non reconnue » et invite à copier le diagnostic. Il en existe désormais un pour ChatGPT et un pour Claude.
 - **Fenêtre réduite** : elle est restaurée avant d'afficher l'onglet Claude.
 
+## Workflows (étape 7)
+
+Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source avant l'envoi : `transform({ text, prompt, notes }) → string`. `prompt-kit.js` (`composePrompt`) impose la même forme partout : rôle et but, sections d'instructions, la réponse **intacte**, puis les consignes personnelles. Voir [ADD_A_WORKFLOW.md](ADD_A_WORKFLOW.md).
+
+| Workflow | Commande | Rôle donné à Claude |
+|---|---|---|
+| Envoyer tel quel | — | Réponse transmise sans modification |
+| Design Figma | `/figma` | Designer UI/UX : crée le design via le connecteur Figma (MCP), ou à défaut une spécification reproductible |
+| Développement | `/code` | Ingénieur senior : fichiers complets, erreurs, tests, choix expliqués |
+| Vidéo Higgsfield | `/video` | Réalisateur : découpage en plans, prompts en anglais, prompts négatifs |
+| Recherche d'emploi | `/job` | Coach carrière : analyse de l'offre, mots-clés ATS, lettre de motivation, sans rien inventer |
+| Rédaction d'e-mail | `/mail` | E-mail prêt à envoyer, en deux versions |
+
+**Choix du workflow** (`resolveWorkflow`, dans le pipeline, **après** lecture de la réponse) :
+
+1. celui choisi dans le menu ▾ ;
+2. sinon la commande qui commence **votre message** à ChatGPT (`/figma Crée…`), si la détection est activée ;
+3. sinon le workflow par défaut des réglages.
+
+**Interface** : le bouton affiche un badge (`/figma`) quand une commande est détectée. Le menu ▾ (`content/ui/workflow-menu.js`) est rendu dans un calque séparé au niveau de `<body>`, pour ne jamais être coupé par la mise en page de ChatGPT. Il suit le bouton au défilement et se manipule au clavier.
+
+**Consignes personnelles** par workflow : saisies dans les réglages, stockées dans `chrome.storage.local` (`services/workflow-notes.js`, 2 000 caractères maximum chacune), ajoutées en fin de prompt.
+
 ## Tests
 
 - `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
@@ -178,5 +201,5 @@ Chaque étape est signalée à l'onglet source (`PIPELINE_STATUS`) pour l'interf
 | 4 | Pipeline + bouton injecté → **V1** | ✅ |
 | 5 | Popup + options | ✅ |
 | 6 | Robustesse et cas limites | ✅ |
-| 7 | Moteur de workflows | ⏳ |
-| 8 | Finitions + docs d'extension | |
+| 7 | Moteur de workflows | ✅ |
+| 8 | Finitions + docs d'extension | ⏳ |

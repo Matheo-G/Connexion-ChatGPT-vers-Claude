@@ -12,6 +12,20 @@ Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic
 
 Raccourci clavier : **Alt+Maj+C**, depuis n'importe quel onglet. Il est modifiable dans `chrome://extensions/shortcuts`.
 
+### Workflows
+
+Commencez votre message à ChatGPT par une commande, et la réponse partira vers Claude avec les bonnes instructions. Le bouton affiche alors un badge, par exemple **➤ Claude `/figma`**.
+
+| Commande | Ce que fait Claude |
+|---|---|
+| `/figma` | Crée le design dans Figma (connecteur Figma MCP) ou une spécification détaillée |
+| `/code` | Développe, avec fichiers complets et tests |
+| `/video` | Découpe en plans avec des prompts Higgsfield |
+| `/job` | Prépare une candidature (analyse, lettre, entretien) |
+| `/mail` | Rédige un e-mail prêt à envoyer |
+
+La flèche **▾** du bouton permet de choisir un autre workflow pour une réponse. Dans les réglages, vous pouvez ajouter vos **consignes personnelles** à chaque workflow. Pour créer un nouveau workflow, voir [docs/ADD_A_WORKFLOW.md](docs/ADD_A_WORKFLOW.md).
+
 La **popup** (icône de l'extension) propose aussi l'envoi de la dernière réponse en un clic, l'état des connexions et vos derniers envois. Les **réglages** (roue dentée) permettent de choisir :
 - nouvelle conversation ou conversation existante ;
 - envoi automatique ou simple insertion ;
@@ -47,6 +61,7 @@ Logs détaillés : activer le **Mode debug** dans les réglages, puis ouvrir la 
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — principes, rôle de chaque dossier, conventions, feuille de route
+- [Ajouter un workflow](docs/ADD_A_WORKFLOW.md) — un fichier et deux lignes
 
 ## Confidentialité
 

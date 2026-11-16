@@ -24,6 +24,8 @@ beforeEach(async () => {
   await h.evalSW(async () => {
     await chrome.storage.sync.clear();
     await chrome.storage.local.clear();
+    // The fixture prompt starts with "/figma": compare raw answers here (step 7 tests detection).
+    await chrome.storage.sync.set({ settings: { detectSlashCommands: false } });
   });
   // Close everything but the harness's messaging probe (the first options page).
   const probe = h.context.pages().find((p) => p.url().endsWith('/src/options/options.html'));
@@ -70,6 +72,7 @@ test('options page: every section rendered with the stored values', async () => 
     'Destination',
     'Après l’envoi'.replace('’', "'"),
     'Workflows',
+    'Consignes personnelles par workflow',
     'Raccourci clavier',
     'Apparence',
     'Historique et confidentialité',

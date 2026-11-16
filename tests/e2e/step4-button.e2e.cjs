@@ -27,8 +27,12 @@ beforeEach(async () => {
   for (const page of [...h.pagesOf('chatgpt.com'), ...h.pagesOf('claude.ai')]) await page.close();
 });
 
+/**
+ * The fixture prompt starts with "/figma": slash detection is turned off here
+ * so the exact answer can be compared (step 7 tests the detection itself).
+ */
 function setSettings(settings) {
-  return h.evalSW((s) => chrome.storage.sync.set({ settings: s }), settings);
+  return h.evalSW((s) => chrome.storage.sync.set({ settings: s }), { detectSlashCommands: false, ...settings });
 }
 
 async function openChatGPT(scenario = { layout: 'turn-key' }) {

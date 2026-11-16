@@ -134,8 +134,9 @@ function toMarkdown(reply, layout) {
 
 /**
  * Every rendered exchange holding an answer, with the id of its (last)
- * answer block — where the "Send to Claude" buttons go.
- * @returns {{turn: Element, messageId: string | null}[]}
+ * answer block and the user prompt that led to it — where the "Send to
+ * Claude" buttons go, and what decides their workflow badge ("/figma").
+ * @returns {{turn: Element, messageId: string | null, prompt: string}[]}
  */
 export function listAnswerTurns() {
   const found = detectLayout();
@@ -143,9 +144,15 @@ export function listAnswerTurns() {
   const byTurn = new Map();
   for (const reply of found.replies) {
     const turn = reply.closest(found.layout.turn) ?? reply;
-    byTurn.set(turn, reply.getAttribute(found.layout.replyIdAttribute)); // last one wins
+    const entry = byTurn.get(turn) ?? { first: reply };
+    entry.messageId = reply.getAttribute(found.layout.replyIdAttribute); // last one wins
+    byTurn.set(turn, entry);
   }
-  return [...byTurn].map(([turn, messageId]) => ({ turn, messageId }));
+  return [...byTurn].map(([turn, { first, messageId }]) => ({
+    turn,
+    messageId,
+    prompt: promptFor(first, found.layout),
+  }));
 }
 
 // ---- Public API ---------------------------------------------------------------

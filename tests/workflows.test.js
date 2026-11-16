@@ -1,0 +1,89 @@
+/**
+ * Unit tests for step 7: workflow registry, slash command detection,
+ * resolution priority, prompt composition, personal notes.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { listWorkflows, getWorkflow, detectWorkflow, resolveWorkflow } from '../src/workflows/registry.js';
+import { composePrompt } from '../src/workflows/prompt-kit.js';
+import { sanitizeNotes, NOTES_MAX_LENGTH } from '../src/services/workflow-notes.js';
+import { iconNames } from '../src/ui-kit/icons.js';
+
+const ANSWER = '# Écran de connexion\n\n- champ email\n\n```js\nconst a = 1;\n```';
+
+test('workflows: unique ids and commands, translated names, known icons', async () => {
+  const messages = JSON.parse(await readFile(new URL('../_locales/fr/messages.json', import.meta.url)));
+  const workflows = listWorkflows();
+  assert.deepEqual(workflows.map((w) => w.id), ['default', 'figma', 'code', 'video', 'job', 'mail']);
+  assert.equal(new Set(workflows.map((w) => w.id)).size, workflows.length);
+  const commands = workflows.map((w) => w.command).filter(Boolean);
+  assert.equal(new Set(commands).size, commands.length);
+  for (const w of workflows) {
+    assert.ok(messages[w.labelKey]?.message, `missing translation ${w.labelKey}`);
+    assert.ok(iconNames().includes(w.icon), `unknown icon ${w.icon}`);
+    if (w.command) assert.match(w.command, /^\/[a-z0-9-]+$/);
+  }
+});
+
+test('every workflow keeps the answer intact and appends personal notes', () => {
+  for (const workflow of listWorkflows()) {
+    const out = workflow.transform({ text: ANSWER, prompt: '', notes: 'Toujours en anglais.' });
+    assert.ok(out.includes(ANSWER), `${workflow.id} must not alter the answer`);
+    assert.ok(out.includes('Toujours en anglais.'), `${workflow.id} must include notes`);
+    assert.equal(workflow.transform({ text: ANSWER, prompt: '' }).includes('Consignes personnelles'), false);
+  }
+  assert.equal(getWorkflow('default').transform({ text: ANSWER, prompt: '' }), ANSWER, 'default is a pass-through');
+});
+
+test('figma workflow asks Claude to use the Figma connector, with a fallback', () => {
+  const out = getWorkflow('figma').transform({ text: ANSWER, prompt: '' });
+  assert.match(out, /connecteur Figma \(MCP\)/);
+  assert.match(out, /Auto Layout/);
+  assert.match(out, /S'il ne l'est pas/);
+});
+
+test('slash command detection: first word only, case-insensitive, exact command', () => {
+  assert.equal(detectWorkflow('/figma Crée un écran')?.id, 'figma');
+  assert.equal(detectWorkflow('  /CODE corrige ce bug')?.id, 'code');
+  assert.equal(detectWorkflow('/mail')?.id, 'mail');
+  assert.equal(detectWorkflow('/figmax truc'), null);
+  assert.equal(detectWorkflow('Crée un écran /figma'), null);
+  assert.equal(detectWorkflow('/inconnu test'), null);
+  assert.equal(detectWorkflow(''), null);
+  assert.equal(detectWorkflow(undefined), null);
+});
+
+test('resolution priority: explicit choice > slash command > default', () => {
+  const base = { defaultWorkflowId: 'default', detectSlashCommands: true };
+  assert.deepEqual(
+    [resolveWorkflow({ ...base, workflowId: 'mail', prompt: '/figma x' })].map((r) => [r.workflow.id, r.reason]),
+    [['mail', 'explicit']],
+  );
+  const byCommand = resolveWorkflow({ ...base, prompt: '/video une pub' });
+  assert.deepEqual([byCommand.workflow.id, byCommand.reason], ['video', 'command']);
+  const byDefault = resolveWorkflow({ ...base, prompt: 'bonjour' });
+  assert.deepEqual([byDefault.workflow.id, byDefault.reason], ['default', 'default']);
+  const disabled = resolveWorkflow({ ...base, detectSlashCommands: false, prompt: '/figma x', defaultWorkflowId: 'code' });
+  assert.deepEqual([disabled.workflow.id, disabled.reason], ['code', 'default']);
+  assert.throws(() => resolveWorkflow({ ...base, workflowId: 'nope' }), { code: 'WORKFLOW_NOT_FOUND' });
+});
+
+test('composePrompt: instructions first, content untouched, notes last', () => {
+  const out = composePrompt({
+    intro: 'Rôle.',
+    sections: [{ title: 'Règles', items: ['un', 'deux'] }],
+    content: ANSWER,
+    contentLabel: 'Brief',
+    notes: '  Ma consigne  ',
+  });
+  assert.equal(out, `Rôle.\n\n## Règles\n- un\n- deux\n\n## Brief\n\n${ANSWER}\n\n## Consignes personnelles (prioritaires)\n\nMa consigne`);
+});
+
+test('notes are sanitised: strings only, empty dropped, length capped', () => {
+  const clean = sanitizeNotes({ figma: 'ok', code: 42, mail: '   ', video: 'x'.repeat(NOTES_MAX_LENGTH + 10) });
+  assert.deepEqual(Object.keys(clean), ['figma', 'video']);
+  assert.equal(clean.video.length, NOTES_MAX_LENGTH);
+  assert.deepEqual(sanitizeNotes(null), {});
+});

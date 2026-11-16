@@ -12,8 +12,8 @@ import { MessageType, PipelineStep } from '../../shared/message-types.js';
 import { RouterError } from '../../shared/errors.js';
 import { Timeouts } from '../../shared/defaults.js';
 import { getProvider } from '../../providers/registry.js';
-import { listWorkflows } from '../../workflows/registry.js';
-import { getSettings } from '../../services/settings.js';
+import { listWorkflows, detectWorkflow } from '../../workflows/registry.js';
+import { getSettings, onSettingsChanged } from '../../services/settings.js';
 import { sendToBackground } from '../../services/messaging.js';
 import { queryFirst } from '../../utils/dom.js';
 import { t } from '../../utils/i18n.js';
@@ -45,6 +45,8 @@ export function createMounter({ log }) {
   /** messageId → button controller (the latest mounted one). */
   const buttons = new Map();
   let target = getProvider('claude', 'target');
+  let detectCommands = true;
+  let unsubscribe = null;
   let observer = null;
   let timer = null;
 
@@ -52,10 +54,10 @@ export function createMounter({ log }) {
 
   function scan() {
     timer = null;
-    for (const { turn, messageId } of listAnswerTurns()) {
+    for (const { turn, messageId, prompt } of listAnswerTurns()) {
       const bar = queryFirst(SELECTORS.actionBar, { root: turn, filter: () => true })?.element;
       if (!bar || bar.querySelector(`:scope > [${BUTTON_MARKER}]`)) continue;
-      const button = createButton(messageId);
+      const button = createButton(messageId, detectCommands ? detectWorkflow(prompt) : null);
       bar.append(button.host);
       buttons.set(messageId, button);
     }
@@ -65,11 +67,15 @@ export function createMounter({ log }) {
     if (!timer) timer = setTimeout(scan, SCAN_DELAY);
   }
 
-  function createButton(messageId) {
+  /** @param {import('../../workflows/registry.js').Workflow | null} detected  From "/figma …" */
+  function createButton(messageId, detected) {
+    const workflowName = detected && (t(detected.labelKey) || detected.label);
     const button = createSendButton({
       label: target.name,
-      title: t('sendButtonTitle', target.name),
+      badge: detected?.command ?? null,
+      title: detected ? t('sendButtonTitleWorkflow', [target.name, workflowName]) : t('sendButtonTitle', target.name),
       menuTitle: t('workflowMenuTitle'),
+      currentWorkflowId: detected?.id ?? null,
       workflows: listWorkflows().map((w) => ({ ...w, label: t(w.labelKey) || w.label })),
       onSend: (workflowId) => send(messageId, workflowId),
     });
@@ -134,7 +140,11 @@ export function createMounter({ log }) {
   async function start() {
     await loadUiStyles();
     const settings = await getSettings().catch(() => null);
-    if (settings) target = getProvider(settings.defaultTarget, 'target');
+    if (settings) applySettings(settings);
+    unsubscribe = onSettingsChanged((next) => {
+      applySettings(next);
+      remountAll(); // labels and badges depend on settings
+    });
     observer = new MutationObserver(scheduleScan);
     observer.observe(document.body, { childList: true, subtree: true });
     scan();
@@ -148,7 +158,19 @@ export function createMounter({ log }) {
     log.warn('Conversation not recognised: ChatGPT may have changed its page. Use the popup diagnostic.');
   }
 
+  function applySettings(settings) {
+    target = getProvider(settings.defaultTarget, 'target');
+    detectCommands = settings.detectSlashCommands;
+  }
+
+  function remountAll() {
+    buttons.forEach((button) => button.destroy());
+    buttons.clear();
+    scan();
+  }
+
   function stop() {
+    unsubscribe?.();
     observer?.disconnect();
     clearTimeout(timer);
     buttons.forEach((button) => button.destroy());

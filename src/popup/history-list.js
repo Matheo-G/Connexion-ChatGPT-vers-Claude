@@ -5,6 +5,7 @@
 
 import { RouterError } from '../shared/errors.js';
 import { getProvider } from '../providers/registry.js';
+import { getWorkflow } from '../workflows/registry.js';
 import { getHistory, onHistoryChanged } from '../services/history.js';
 import { formatRelative } from '../utils/time.js';
 import { t } from '../utils/i18n.js';
@@ -46,6 +47,17 @@ function targetName(id) {
   }
 }
 
+/** Workflow name, omitted for the default one (nothing special to tell). */
+function workflowName(id) {
+  if (!id || id === 'default') return '';
+  try {
+    const workflow = getWorkflow(id);
+    return t(workflow.labelKey) || workflow.label;
+  } catch {
+    return '';
+  }
+}
+
 /** @param {import('../services/history.js').HistoryEntry} entry */
 function renderEntry(entry) {
   const status = STATUS[entry.status] ?? STATUS.failed;
@@ -64,7 +76,9 @@ function renderEntry(entry) {
   preview.textContent = entry.status === 'failed' ? new RouterError(entry.errorCode).userMessage : entry.preview;
   const meta = document.createElement('p');
   meta.className = 'history__meta';
-  meta.textContent = [t(status.labelKey), targetName(entry.targetId), formatRelative(entry.at)].join(' · ');
+  meta.textContent = [t(status.labelKey), targetName(entry.targetId), workflowName(entry.workflowId), formatRelative(entry.at)]
+    .filter(Boolean)
+    .join(' · ');
   body.append(preview, meta);
   item.append(glyph, body);
 

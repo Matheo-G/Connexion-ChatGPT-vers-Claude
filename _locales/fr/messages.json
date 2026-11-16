@@ -268,7 +268,7 @@
     "message": "Workflow par défaut"
   },
   "optDefaultWorkflowHint": {
-    "message": "Utilisé par le bouton et le raccourci. Les workflows /figma, /code… arrivent bientôt."
+    "message": "Utilisé quand aucune commande n'est détectée et qu'aucun workflow n'est choisi dans le menu ▾."
   },
   "optSectionAppearance": {
     "message": "Apparence"
@@ -395,5 +395,60 @@
   },
   "patiencePatient": {
     "message": "Connexion lente"
+  },
+  "workflowFigma": {
+    "message": "Design Figma"
+  },
+  "workflowCode": {
+    "message": "Développement"
+  },
+  "workflowVideo": {
+    "message": "Vidéo Higgsfield"
+  },
+  "workflowJob": {
+    "message": "Recherche d'emploi"
+  },
+  "workflowMail": {
+    "message": "Rédaction d'e-mail"
+  },
+  "workflowTemplate": {
+    "message": "Modèle"
+  },
+  "optDetectSlash": {
+    "message": "Détecter /figma, /code… dans mes messages"
+  },
+  "optDetectSlashHint": {
+    "message": "Si votre message à ChatGPT commence par une commande, la réponse part avec ce workflow."
+  },
+  "optSectionWorkflowNotes": {
+    "message": "Consignes personnelles par workflow"
+  },
+  "optWorkflowNotesHint": {
+    "message": "Ajoutées à la fin du prompt envoyé à Claude, en priorité (ex. « utilise mon design system », « réponds en anglais »)."
+  },
+  "optWorkflowNotesPlaceholder": {
+    "message": "Aucune consigne"
+  },
+  "optWorkflowNotesCount": {
+    "message": "$COUNT$ / $MAX$",
+    "placeholders": {
+      "count": {
+        "content": "$1"
+      },
+      "max": {
+        "content": "$2"
+      }
+    }
+  },
+  "sendButtonTitleWorkflow": {
+    "message": "Envoyer cette réponse à $NAME$ avec le workflow « $WORKFLOW$ »",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      },
+      "workflow": {
+        "content": "$2"
+      }
+    }
   }
 }

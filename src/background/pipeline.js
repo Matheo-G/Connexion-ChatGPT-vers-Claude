@@ -13,7 +13,8 @@
 
 import { MessageType, PipelineStep } from '../shared/message-types.js';
 import { RouterError, ErrorCode } from '../shared/errors.js';
-import { getWorkflow } from '../workflows/registry.js';
+import { getWorkflow, resolveWorkflow } from '../workflows/registry.js';
+import { getWorkflowNotes } from '../services/workflow-notes.js';
 import { getProvider } from '../providers/registry.js';
 import { DEFAULT_SETTINGS, scaleTimeouts } from '../shared/defaults.js';
 import { getSettings } from '../services/settings.js';
@@ -69,18 +70,27 @@ export async function runPipeline(request = {}) {
 
 async function execute(request, job, settings) {
   const { sourceProviderId } = job;
-  const workflow = getWorkflow(request.workflowId ?? settings.defaultWorkflow);
-  const target = getProvider(request.targetProviderId ?? workflow.target ?? settings.defaultTarget, 'target');
-  const options = { ...settings, ...workflow.options };
-  Object.assign(job, { workflowId: workflow.id, targetId: target.id });
-  log.info(`Job ${job.jobId}: ${sourceProviderId} → ${workflow.id} → ${target.id}`);
+  if (request.workflowId) getWorkflow(request.workflowId); // fail fast on an unknown id
 
   notify(job, PipelineStep.EXTRACTING);
   const answer = await readSource(sourceProviderId, { tabId: job.tabId, messageId: job.messageId });
   job.tabId = answer.tabId;
 
+  // The workflow can depend on the user's message ("/figma …"): resolve it now.
+  const { workflow, reason } = resolveWorkflow({
+    workflowId: request.workflowId,
+    prompt: answer.prompt,
+    defaultWorkflowId: settings.defaultWorkflow,
+    detectSlashCommands: settings.detectSlashCommands,
+  });
+  const target = getProvider(request.targetProviderId ?? workflow.target ?? settings.defaultTarget, 'target');
+  const options = { ...settings, ...workflow.options };
+  Object.assign(job, { workflowId: workflow.id, targetId: target.id });
+  log.info(`Job ${job.jobId}: ${sourceProviderId} → ${workflow.id} (${reason}) → ${target.id}`);
+
   notify(job, PipelineStep.TRANSFORMING);
-  const text = await workflow.transform({ text: answer.markdown, prompt: answer.prompt });
+  const notes = (await getWorkflowNotes())[workflow.id] ?? '';
+  const text = await workflow.transform({ text: answer.markdown, prompt: answer.prompt, notes });
   job.text = text;
 
   const delivery = await deliverText(target.id, text, {
@@ -94,7 +104,7 @@ async function execute(request, job, settings) {
 
   if (options.returnToSource) await returnTo(answer.tabId);
   notify(job, PipelineStep.DONE, { targetName: target.name, sent: delivery.sent });
-  return { jobId: job.jobId, workflowId: workflow.id, targetId: target.id, ...delivery };
+  return { jobId: job.jobId, workflowId: workflow.id, workflowReason: reason, targetId: target.id, ...delivery };
 }
 
 /** Local history (if enabled) — a short preview only, see services/history.js. */

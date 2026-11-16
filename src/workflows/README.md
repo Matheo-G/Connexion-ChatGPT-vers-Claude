@@ -1,10 +1,10 @@
 # workflows/
 
-Un fichier par workflow (`/code`, `/figma`, `/mail`…) + `registry.js`.
+Un fichier par workflow : ce que devient la réponse de ChatGPT avant d'arriver à Claude.
 
-Un workflow décrit : sa commande, son libellé, son icône, sa cible par défaut,
-une fonction `transform(text)` et ses options (nouvelle conversation, envoi auto…).
+- `registry.js` : liste, détection des commandes (`/figma`…) et règle de priorité ;
+- `prompt-kit.js` : `composePrompt`, la forme commune des prompts ;
+- `<id>.workflow.js` : `default`, `figma`, `code`, `video`, `job`, `mail` ;
+- `_template.workflow.js` : le modèle à copier.
 
-Ajouter un workflow = copier `_template.workflow.js` et l'enregistrer dans le registre.
-
-_Implémenté à l'étape 7 (le workflow `default` arrive à l'étape 4)._
+Guide : [docs/ADD_A_WORKFLOW.md](../../docs/ADD_A_WORKFLOW.md).

@@ -6,6 +6,8 @@
 
 import { getSettings, updateSettings, resetSettings, onSettingsChanged } from '../services/settings.js';
 import { clearHistory } from '../services/history.js';
+import { getWorkflowNotes, setWorkflowNotes, NOTES_MAX_LENGTH } from '../services/workflow-notes.js';
+import { listWorkflows } from '../workflows/registry.js';
 import { localizeDocument, t } from '../utils/i18n.js';
 import { hydrateIcons } from '../ui-kit/dom-icons.js';
 import { applyTheme } from '../ui-kit/theme.js';
@@ -16,6 +18,7 @@ const log = createLogger('options');
 const SHORTCUT_COMMAND = 'send-latest-answer';
 const SAVED_VISIBLE_MS = 1_600;
 const CONFIRM_WINDOW_MS = 3_000;
+const NOTES_SAVE_DELAY = 500;
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -34,6 +37,7 @@ function renderSections() {
     const card = el('div', 'card');
     card.append(...section.fields.map(renderField));
     if (section.shortcut) card.append(renderShortcutRow());
+    if (section.workflowNotes) card.append(...renderWorkflowNotes());
     if (section.actions?.length) card.append(renderActions(section.actions));
     wrapper.append(el('h2', 'section__title', t(section.titleKey)), card);
     return wrapper;
@@ -111,6 +115,43 @@ function renderShortcutRow() {
   change.addEventListener('click', () => chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }));
   control.append(keys, change);
   return renderRow(t('optShortcut'), t('optShortcutHint'), control);
+}
+
+/** One textarea per workflow; saved while typing (debounced). */
+function renderWorkflowNotes() {
+  const intro = el('p', 'row__hint notes__intro', t('optWorkflowNotesHint'));
+  const rows = listWorkflows().map((workflow) => {
+    const id = `notes-${workflow.id}`;
+    const row = el('div', 'row row--stacked');
+    const label = el('label', 'row__label', t(workflow.labelKey) || workflow.label);
+    label.htmlFor = id;
+    if (workflow.command) label.append(' ', el('kbd', '', workflow.command));
+    const textarea = el('textarea', 'textarea');
+    Object.assign(textarea, { id, rows: 2, maxLength: NOTES_MAX_LENGTH, placeholder: t('optWorkflowNotesPlaceholder') });
+    textarea.dataset.workflow = workflow.id;
+    const counter = el('span', 'counter');
+    const updateCounter = () => (counter.textContent = t('optWorkflowNotesCount', [String(textarea.value.length), String(NOTES_MAX_LENGTH)]));
+    let timer = null;
+    textarea.addEventListener('input', () => {
+      updateCounter();
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        await setWorkflowNotes(workflow.id, textarea.value);
+        flashSaved();
+      }, NOTES_SAVE_DELAY);
+    });
+    textarea.addEventListener('focus', updateCounter);
+    row.append(label, textarea, counter);
+    return row;
+  });
+  return [intro, ...rows];
+}
+
+async function fillWorkflowNotes() {
+  const notes = await getWorkflowNotes();
+  for (const textarea of document.querySelectorAll('textarea[data-workflow]')) {
+    textarea.value = notes[textarea.dataset.workflow] ?? '';
+  }
 }
 
 function renderActions(actions) {
@@ -202,7 +243,7 @@ async function init() {
   const { version } = chrome.runtime.getManifest();
   $('version').textContent = t('versionLabel', version) || `v${version}`;
   fill(await getSettings());
-  await fillShortcut();
+  await Promise.all([fillShortcut(), fillWorkflowNotes()]);
   onSettingsChanged(fill);
   document.body.dataset.ready = 'true';
 }

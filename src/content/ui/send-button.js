@@ -1,14 +1,15 @@
 /**
  * @file "🚀 Claude" split button injected under each AI answer.
  *
- *   [ ➤ Claude | ▾ ]   main part: send with the default workflow
- *                       chevron: pick another workflow (hidden while only one exists)
+ *   [ ➤ Claude /figma | ▾ ]   main part: send (badge = workflow detected from the prompt)
+ *                             chevron: pick another workflow (see workflow-menu.js)
  *
  * States (host[data-state]): idle → busy (spinner + step) → success | error → idle.
  */
 
 import { icon } from '../../ui-kit/icons.js';
 import { createShadowHost, destroyShadowHost } from './shadow.js';
+import { openWorkflowMenu } from './workflow-menu.js';
 
 export const BUTTON_MARKER = 'data-ai-router-button';
 const RESET_DELAY = { success: 6_000, error: 5_000 };
@@ -28,6 +29,9 @@ button:focus-visible { box-shadow: var(--focus-ring); border-radius: var(--radiu
 .main { padding: 0 11px 0 9px; }
 .more { padding: 0 8px 0 6px; border-inline-start: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent); }
 .more[hidden] { display: none; }
+.badge { padding: 2px 6px; border-radius: var(--radius-full); font: 600 11px/1.2 var(--font-mono);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.badge[hidden] { display: none; }
 .icon { display: grid; place-items: center; width: 14px; height: 14px; }
 .spinner { width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor;
   border-right-color: transparent; animation: spin .8s linear infinite; }
@@ -40,19 +44,8 @@ button:focus-visible { box-shadow: var(--focus-ring); border-radius: var(--radiu
   border-color: color-mix(in srgb, var(--color-danger) 40%, transparent);
   background: color-mix(in srgb, var(--color-danger) 12%, transparent); }
 .label { animation: fade var(--duration-base) var(--ease-out); }
-.menu { position: absolute; bottom: calc(100% + 6px); inset-inline-end: 0; min-width: 210px; padding: 4px;
-  border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg);
-  box-shadow: var(--shadow-md); z-index: 2147483647; animation: pop var(--duration-base) var(--ease-out); }
-.menu[hidden] { display: none; }
-.menu-title { padding: 6px 10px 4px; font: 600 11px/1.2 var(--font-sans); color: var(--color-text-muted);
-  text-transform: uppercase; letter-spacing: .05em; }
-.item { display: flex; width: 100%; box-sizing: border-box; gap: 8px; padding: 8px 10px; border-radius: var(--radius-sm);
-  color: var(--color-text); font-weight: 500; }
-.item:hover, .item:focus-visible { background: var(--color-surface-hover); }
-.item kbd { margin-inline-start: auto; font: 500 11px/1 var(--font-mono); color: var(--color-text-muted); }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes pop { from { opacity: 0; transform: translateY(4px) scale(.98); } to { opacity: 1; transform: none; } }
 `;
 
 const STATE_ICON = { idle: 'send', success: 'check', error: 'alert' };
@@ -60,23 +53,24 @@ const STATE_ICON = { idle: 'send', success: 'check', error: 'alert' };
 /**
  * @param {Object} options
  * @param {string} options.label       Idle label (target name, e.g. "Claude").
+ * @param {string | null} [options.badge]  Workflow detected for this answer ("/figma"), shown when idle.
  * @param {string} options.title       Tooltip / accessible name.
  * @param {string} options.menuTitle
  * @param {{id: string, label: string, icon: string, command: string | null}[]} options.workflows
+ * @param {string | null} [options.currentWorkflowId]  Highlighted in the menu.
  * @param {(workflowId?: string) => void} options.onSend
  */
-export function createSendButton({ label, title, menuTitle, workflows, onSend }) {
+export function createSendButton({ label, badge = null, title, menuTitle, workflows, currentWorkflowId = null, onSend }) {
   const { host, root } = createShadowHost({ marker: BUTTON_MARKER, css: CSS });
   root.innerHTML = `
     <div class="split">
-      <button class="main" type="button"><span class="icon"></span><span class="label"></span></button>
+      <button class="main" type="button"><span class="icon"></span><span class="label"></span><span class="badge" hidden></span></button>
       <button class="more" type="button" aria-haspopup="menu" aria-expanded="false">${icon('chevronDown', { size: 12 })}</button>
-    </div>
-    <div class="menu" role="menu" hidden></div>`;
+    </div>`;
 
   const main = root.querySelector('.main');
   const more = root.querySelector('.more');
-  const menu = root.querySelector('.menu');
+  let menu = null;
   main.title = title;
   main.setAttribute('aria-label', title);
   more.setAttribute('aria-label', menuTitle);
@@ -94,40 +88,33 @@ export function createSendButton({ label, title, menuTitle, workflows, onSend })
     const labelEl = root.querySelector('.label');
     labelEl.textContent = text;
     labelEl.replaceWith(labelEl.cloneNode(true)); // restart the fade animation
+    const badgeEl = root.querySelector('.badge');
+    badgeEl.textContent = badge ?? '';
+    badgeEl.hidden = !badge || state !== 'idle';
     if (RESET_DELAY[state]) resetTimer = setTimeout(() => setState('idle'), RESET_DELAY[state]);
   }
 
-  function renderMenu() {
-    menu.innerHTML = `<div class="menu-title"></div>`;
-    menu.firstChild.textContent = menuTitle;
-    for (const workflow of workflows) {
-      const item = document.createElement('button');
-      item.className = 'item';
-      item.setAttribute('role', 'menuitem');
-      item.innerHTML = `${icon(workflow.icon, { size: 14 })}<span></span>${workflow.command ? '<kbd></kbd>' : ''}`;
-      item.querySelector('span').textContent = workflow.label;
-      if (workflow.command) item.querySelector('kbd').textContent = workflow.command;
-      item.addEventListener('click', () => {
-        toggleMenu(false);
-        trigger(workflow.id);
-      });
-      menu.append(item);
-    }
-  }
-
-  function toggleMenu(open = menu.hidden) {
-    menu.hidden = !open;
-    more.setAttribute('aria-expanded', String(open));
-    if (open) menu.querySelector('.item')?.focus();
+  function toggleMenu() {
+    if (menu) return menu.close();
+    more.setAttribute('aria-expanded', 'true');
+    menu = openWorkflowMenu({
+      anchor: host,
+      title: menuTitle,
+      workflows,
+      currentId: currentWorkflowId,
+      onChoose: trigger,
+      onClose: () => {
+        menu = null;
+        more.setAttribute('aria-expanded', 'false');
+        more.focus();
+      },
+    });
   }
 
   function trigger(workflowId) {
     if (host.dataset.state === 'busy') return; // no double send
     onSend(workflowId);
   }
-
-  const closeOnOutside = (event) => !event.composedPath().includes(host) && toggleMenu(false);
-  const closeOnEscape = (event) => event.key === 'Escape' && toggleMenu(false);
 
   main.addEventListener('click', (event) => {
     event.stopPropagation(); // never let the page treat it as its own action
@@ -137,10 +124,6 @@ export function createSendButton({ label, title, menuTitle, workflows, onSend })
     event.stopPropagation();
     toggleMenu();
   });
-  document.addEventListener('click', closeOnOutside, true);
-  root.addEventListener('keydown', closeOnEscape);
-
-  renderMenu();
   setState('idle');
 
   return {
@@ -148,7 +131,7 @@ export function createSendButton({ label, title, menuTitle, workflows, onSend })
     setState,
     destroy() {
       clearTimeout(resetTimer);
-      document.removeEventListener('click', closeOnOutside, true);
+      menu?.close();
       destroyShadowHost(host);
     },
   };

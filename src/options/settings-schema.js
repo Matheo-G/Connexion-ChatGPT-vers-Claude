@@ -24,6 +24,7 @@ import { listWorkflows } from '../workflows/registry.js';
  * @property {Field[]} fields
  * @property {{id: string, labelKey: string, danger?: boolean}[]} [actions]
  * @property {boolean} [shortcut]        Renders the keyboard shortcut row.
+ * @property {boolean} [workflowNotes]   Renders one personal-instructions box per workflow.
  */
 
 /** @type {Section[]} */
@@ -64,7 +65,14 @@ export const SETTINGS_SCHEMA = [
         hintKey: 'optDefaultWorkflowHint',
         choices: () => listWorkflows().map((w) => ({ value: w.id, labelKey: w.labelKey, label: w.label })),
       },
+      { key: 'detectSlashCommands', type: 'toggle', labelKey: 'optDetectSlash', hintKey: 'optDetectSlashHint' },
     ],
+  },
+  {
+    id: 'workflow-notes',
+    titleKey: 'optSectionWorkflowNotes',
+    fields: [],
+    workflowNotes: true,
   },
   {
     id: 'shortcut',

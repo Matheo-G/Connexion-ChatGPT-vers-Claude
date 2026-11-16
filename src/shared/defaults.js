@@ -8,6 +8,7 @@ export const StorageKey = Object.freeze({
   SETTINGS: 'settings', // chrome.storage.sync  – user preferences
   HISTORY: 'history', // chrome.storage.local – recent routing jobs
   CURRENT_JOB: 'currentJob', // chrome.storage.session – survives SW restarts
+  WORKFLOW_NOTES: 'workflowNotes', // chrome.storage.local – personal instructions per workflow
 });
 
 /**
