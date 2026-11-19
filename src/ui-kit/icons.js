@@ -13,6 +13,7 @@ const PATHS = Object.freeze({
   logo: '<circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.5 12h3a3 3 0 0 0 3-3V8.5a2.5 2.5 0 0 1 2.5-2.5h.5"/><path d="M10.5 12a3 3 0 0 1 3 3v.5a2.5 2.5 0 0 0 2.5 2.5h.5"/>',
   send: '<path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7Z"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
+  reply: '<path d="m9 17-5-5 5-5"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>',
   alert: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
   chevronDown: '<path d="m6 9 6 6 6-6"/>',
   close: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',

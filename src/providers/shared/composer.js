@@ -32,12 +32,14 @@ const SENT_CONFIRM_WAIT = 4_000;
  * @property {readonly string[]} authPaths      URL paths of the login screens on the site itself.
  * @property {readonly RegExp[]} rateLimitPatterns  Usage-limit banners, searched around the composer.
  * @property {RegExp} chatPages                 Paths that must show an editor (health check).
+ * @property {() => boolean} [isBusy]           The AI is still answering: sending now would
+ *   hit its "stop" button (ChatGPT as a destination). Refused with STILL_GENERATING.
  */
 
 /**
  * @param {ComposerConfig} config
  */
-export function createComposerWriter({ selectors, authPaths, rateLimitPatterns, chatPages }) {
+export function createComposerWriter({ selectors, authPaths, rateLimitPatterns, chatPages, isBusy = () => false }) {
   // ---- Page state ---------------------------------------------------------
 
   const onAuthPath = () => authPaths.some((path) => location.pathname.startsWith(path));
@@ -153,6 +155,8 @@ export function createComposerWriter({ selectors, authPaths, rateLimitPatterns, 
     if (!hasText(text)) throw new RouterError(ErrorCode.NO_CONTENT, 'Empty text');
 
     await waitForEditor(elementTimeout);
+    // Before touching anything: the user's conversation must not be disturbed mid-answer.
+    if (isBusy()) throw new RouterError(ErrorCode.STILL_GENERATING, 'The destination is still answering');
     const staleAttachment = await detectStaleAttachment(log);
     const insertedWith = await insertIntoEditor(findEditor, text, {
       isInserted: isInserted(text, { staleAttachment }),
@@ -199,9 +203,10 @@ function pressEnter(editor) {
  * skeleton of the composer.
  * @param {ComposerConfig} config
  * @param {ReturnType<typeof createComposerWriter>} writer
+ * @param {string[]} [extraSections]  Provider-specific sections (e.g. Claude's answers).
  * @returns {{text: string}}
  */
-function snapshot({ name, selectors, authPaths }, writer) {
+export function composerSnapshot({ name, selectors, authPaths }, writer, extraSections = []) {
   const { version } = chrome.runtime.getManifest();
   const all = [...selectors.editor, ...selectors.sendButton, ...selectors.composer, ...selectors.loginForm];
   const counts = [...new Set(all)].map((s) => `${String(document.querySelectorAll(s).length).padStart(3)}   ${s}`);
@@ -224,6 +229,7 @@ function snapshot({ name, selectors, authPaths }, writer) {
     `### Marqueurs\n${counts.join('\n')}`,
     `### Cadres (iframes) : ${frames.length}\n${[...new Set(frames)].join('\n') || '(aucun)'}`,
     `### Zone de saisie\n${composer ? domSkeleton(composer, { maxDepth: 12, maxNodes: 250 }) : '(none)'}`,
+    ...extraSections,
   ].join('\n\n');
   return { text };
 }
@@ -238,7 +244,7 @@ export function createComposerAdapter(config) {
     describe: () => ({ path: location.pathname, ...writer.health() }),
     handlers: {
       [MessageType.TARGET_SUBMIT]: (payload) => writer.submit(payload, { log }),
-      [MessageType.PROVIDER_DIAGNOSE]: () => snapshot(config, writer),
+      [MessageType.PROVIDER_DIAGNOSE]: () => composerSnapshot(config, writer),
     },
     destroy() {},
   });

@@ -91,3 +91,35 @@ export const SELECTORS = Object.freeze({
     '.sr-only',
   ],
 });
+
+/**
+ * ChatGPT as the receiver of results sent back from Claude (step 9).
+ * Composer: a ProseMirror editor `#prompt-textarea` in the composer form.
+ * The send and stop buttons share their place: only "send" selectors here,
+ * and the writer refuses while ChatGPT is answering (never click "stop").
+ */
+export const COMPOSER = Object.freeze({
+  editor: [
+    '#prompt-textarea[contenteditable="true"]',
+    'form [contenteditable="true"][role="textbox"]',
+    'form .ProseMirror[contenteditable="true"]',
+    'textarea#prompt-textarea',
+  ],
+  sendButton: [
+    'button[data-testid="send-button"]',
+    'button[aria-label*="Envoyer" i]',
+    'button[aria-label*="Send" i]',
+  ],
+  composer: ['form', '[data-type="unified-composer"]'],
+  loginForm: ['[data-testid="login-button"]', 'a[href*="/auth/login"]'],
+});
+
+export const COMPOSER_AUTH_PATHS = Object.freeze(['/auth/login', '/log-in']);
+
+/** Usage-limit banners (EN/FR), searched around the composer. */
+export const COMPOSER_RATE_LIMITS = Object.freeze([
+  /usage cap/i,
+  /reached (the|your) (\w+ )?limit/i,
+  /limite d.utilisation/i,
+  /atteint (la|votre) limite/i,
+]);

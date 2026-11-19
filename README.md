@@ -53,6 +53,7 @@ Commencez votre message à ChatGPT par une commande. Le bouton affiche alors un 
 - **Votre demande d'origine et ses liens** sont toujours transmis à Claude, en plus de la réponse de ChatGPT, et c'est votre demande qui prime.
 - La flèche **▾** du bouton permet de choisir **la destination** (Claude, Copilot) **ou un autre workflow** pour une réponse.
 - **Routage vocal** : terminez votre message par « …, envoie-le à Copilot » (ou « …dans Claude ») et le bouton visera cette IA. La phrase n'est pas transmise à l'IA.
+- **Retour vers ChatGPT** : sous chaque réponse de Claude, le bouton **↩ ChatGPT** renvoie la réponse dans la conversation ChatGPT qui a demandé le travail, pour la suite (évaluation, étape suivante).
 - Réglages → **Consignes personnelles par workflow** : des consignes par défaut sont fournies pour chaque workflow. Modifiez-les, videz-les ou rétablissez-les ; les [champs à compléter] sont signalés.
 
 ### Popup et réglages
@@ -74,6 +75,7 @@ Commencez votre message à ChatGPT par une commande. Le bouton affiche alors un 
 |---|---|
 | Pas de bouton sous les réponses | Popup → Connexions. Si « Page non reconnue » : *Outils de diagnostic → Copier le diagnostic ChatGPT* et l'envoyer (le diagnostic ne contient aucun texte de conversation). |
 | « Vous n'êtes pas connecté » | Se connecter à claude.ai ou à copilot.cloud.microsoft dans ce navigateur. |
+| Pas de bouton ↩ ChatGPT sous les réponses de Claude | Ouvrir une conversation Claude terminée, puis popup → Outils de diagnostic → **Copier le diagnostic Claude** et l'envoyer. |
 | Copilot : le texte n'arrive pas | Popup → Outils de diagnostic → **Copier le diagnostic Copilot** (structure seule, sans texte) et l'envoyer. |
 | Connexions « Indisponible » | `chrome://extensions` → ⟳ sur l'extension, puis bouton **Erreurs** si besoin. Le message technique s'affiche dans la popup. |
 | ChatGPT répond « je ne peux pas » à `/figma` | Faire l'étape **Configurer ChatGPT**. |

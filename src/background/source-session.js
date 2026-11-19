@@ -1,5 +1,6 @@
 /**
- * @file Reads content from a source AI tab (ChatGPT today).
+ * @file Reads an answer from an AI tab: ChatGPT (the brief) or, on the way
+ * back, the AI that executed it (Claude).
  *
  * When called from the provider's page itself (button under an answer,
  * step 4) that tab is used. Otherwise (popup, shortcut, any other page) the
@@ -24,13 +25,19 @@ const log = createLogger('source-session');
  * @returns {Promise<import('../providers/chatgpt/reader.js').ExtractedAnswer & {tabId: number}>}
  */
 export async function readSource(providerId, { tabId, messageId } = {}) {
-  const provider = getProvider(providerId, 'source');
+  const provider = getProvider(providerId);
+  if (!canBeRead(provider)) throw new RouterError(ErrorCode.PROVIDER_NOT_FOUND, `${provider.name} cannot be read`);
   const sourceTabId = (await isProviderTab(tabId, provider)) ? tabId : await findSourceTab(provider);
 
   await ensureContentScript(sourceTabId);
   const answer = await sendToTab(sourceTabId, MessageType.SOURCE_EXTRACT, { messageId });
   log.info(`Read ${answer.length} chars from ${provider.name}`, { tabId: sourceTabId });
   return { ...answer, tabId: sourceTabId };
+}
+
+/** Briefs come from a source (ChatGPT); results come back from an AI with `returnTo` (Claude). */
+function canBeRead(provider) {
+  return provider.roles.includes('source') || Boolean(provider.returnTo);
 }
 
 async function isProviderTab(tabId, provider) {

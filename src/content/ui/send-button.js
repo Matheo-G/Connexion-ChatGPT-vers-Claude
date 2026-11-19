@@ -48,11 +48,12 @@ button:focus-visible { box-shadow: var(--focus-ring); border-radius: var(--radiu
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 `;
 
-const STATE_ICON = { idle: 'send', success: 'check', error: 'alert' };
+const STATE_ICON = { success: 'check', error: 'alert' };
 
 /**
  * @param {Object} options
  * @param {string} options.label       Idle label (target name, e.g. "Claude").
+ * @param {string} [options.icon='send']  Idle icon ("reply" for the way back to ChatGPT).
  * @param {string | null} [options.badge]  Workflow detected for this answer ("/figma"), shown when idle.
  * @param {string} options.title       Tooltip / accessible name.
  * @param {string} options.menuTitle
@@ -60,7 +61,7 @@ const STATE_ICON = { idle: 'send', success: 'check', error: 'alert' };
  * @param {(choice?: Record<string, string>) => void} options.onSend
  *   Without choice: the defaults shown on the button; from the menu: {workflowId} or {targetProviderId}.
  */
-export function createSendButton({ label, badge = null, title, menuTitle, sections, onSend }) {
+export function createSendButton({ label, icon: idleIcon = 'send', badge = null, title, menuTitle, sections, onSend }) {
   const { host, root } = createShadowHost({ marker: BUTTON_MARKER, css: CSS });
   root.innerHTML = `
     <div class="split">
@@ -75,7 +76,7 @@ export function createSendButton({ label, badge = null, title, menuTitle, sectio
   // The accessible name starts with the visible text ("Claude /figma") so voice
   // control ("click Claude") works (WCAG 2.5.3), then adds the full description.
   main.setAttribute('aria-label', `${[label, badge].filter(Boolean).join(' ')} — ${title}`);
-  more.setAttribute('aria-label', menuTitle);
+  if (menuTitle) more.setAttribute('aria-label', menuTitle);
   more.hidden = !sections.some((section) => section.items.length > 1);
 
   let resetTimer = null;
@@ -86,7 +87,7 @@ export function createSendButton({ label, badge = null, title, menuTitle, sectio
     host.dataset.state = state;
     main.setAttribute('aria-busy', String(state === 'busy'));
     root.querySelector('.icon').innerHTML =
-      state === 'busy' ? '<span class="spinner"></span>' : icon(STATE_ICON[state], { size: 14 });
+      state === 'busy' ? '<span class="spinner"></span>' : icon(state === 'idle' ? idleIcon : STATE_ICON[state], { size: 14 });
     const labelEl = root.querySelector('.label');
     labelEl.textContent = text;
     labelEl.replaceWith(labelEl.cloneNode(true)); // restart the fade animation

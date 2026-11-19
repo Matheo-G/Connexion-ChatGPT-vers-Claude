@@ -195,6 +195,17 @@ Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source
 - **Destination** = choix dans le menu ▾ > IA nommée dans le message (`providers/routing.js`, alias des providers, motifs stricts « verbe d'envoi + à/dans/sur + IA » ou « … sur X » en fin de phrase) > `workflow.target` > réglage par défaut. La phrase de routage est retirée de « Ma demande initiale », et les instructions ChatGPT demandent de ne pas la reprendre.
 - **Consignes par défaut** : `defaultNotes` dans chaque workflow. Seules les versions de l'utilisateur sont stockées (`effectiveNotes`). Une chaîne vide est un choix conservé ; « Rétablir » supprime la version de l'utilisateur.
 
+## Retour vers ChatGPT (étape 9)
+
+Le chemin inverse réutilise toute la machinerie, sans nouveau module de transport :
+
+- **Lecture de Claude** : `providers/claude/reader.js`. Une réponse = `[data-is-streaming]` (`"true"` pendant l'écriture). Les blocs `.standard-markdown` sont joints (texte avant et après un appel d'outil) ; les appels d'outils, les réflexions repliées et l'interface sont ignorés. Un artefact est mentionné par son titre. L'identifiant vient de la ligne de la liste virtualisée (`data-index`), sinon de la position.
+- **Bouton « ↩ ChatGPT »** : `providers/shared/return-button.js`, générique (Copilot pourra le réutiliser), même bouton que « ➤ Claude » sans menu. Absent tant que la réponse s'écrit.
+- **ChatGPT reçoit** : l'écrivain générique `shared/composer.js` sur `#prompt-textarea`. Garde `isBusy` : si ChatGPT répond encore, refus `STILL_GENERATING` **avant** toute saisie (son bouton d'envoi devient « Arrêter » : il ne doit jamais être cliqué).
+- **Métadonnées** : `returnTo: 'chatgpt'` (Claude) et `receivesReturns: true` (ChatGPT). ChatGPT n'est pas un `target` : il n'apparaît ni dans « Envoyer vers » ni dans les réglages.
+- **Bonne conversation** : à chaque envoi, `background/conversation-links.js` retient (dans `chrome.storage.session`, adresses seulement) la conversation ChatGPT d'origine et la page Claude. Au retour : même adresse Claude, sinon dernier envoi fait dans cet onglet sur « nouvelle conversation ». Sans lien : l'onglet ChatGPT le plus pertinent. `prepareTarget({pageUrl})` rouvre cette conversation (jamais un nouveau chat), y compris lors du nouvel essai automatique.
+- **Texte** : `workflows/return-kit.js` → `↩ Retour de Claude · /figma` + la réponse en Markdown. Aucun workflow appliqué.
+
 ## Tests
 
 - `npm run lint` : ESLint.
@@ -230,3 +241,6 @@ Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source
 | 6 | Robustesse et cas limites | ✅ |
 | 7 | Moteur de workflows | ✅ |
 | 8 | Finitions : revue de code, accessibilité, paquet, documentation | ✅ |
+| 9 | Retour Claude → ChatGPT : bouton « ↩ ChatGPT », conversation d'origine | ✅ |
+| 10 | Retour automatique + mode revue de ChatGPT | à venir |
+| 11 | Boucle autonome (optionnelle) | à venir |

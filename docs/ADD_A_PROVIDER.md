@@ -66,6 +66,8 @@ Ajouter aussi `aliases: ['gemini']` dans `index.js` : « envoie-le à Gemini » 
 
 Pour une source, il faut aussi gérer `SOURCE_EXTRACT`, et le bouton d'envoi (`mount.js`) si besoin.
 
+**Retour vers ChatGPT** (comme Claude) : ajouter `returnTo: 'chatgpt'` dans `index.js`, un lecteur (`listAnswers`, `extract`, voir `providers/claude/reader.js`) et `createReturnMounter` de `providers/shared/return-button.js` dans l'adaptateur.
+
 `health()`, fourni par le module générique, renvoie `loggedIn`, `editorFound` et `recognized` : la popup affiche l'état en conséquence (« Non connecté », « Page non reconnue »). Si le site redirige vers une page de connexion externe, la préparation de l'onglet le détecte (« non connecté »).
 
 ## 5. Enregistrement

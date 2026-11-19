@@ -10,5 +10,7 @@ export default Object.freeze({
   matches: ['https://chatgpt.com/*', 'https://chat.openai.com/*'],
   newChatUrl: 'https://chatgpt.com/',
   roles: Object.freeze(['source']),
+  /** Also receives the results sent back from Claude ("↩ ChatGPT", step 9). */
+  receivesReturns: true,
   adapterPath: 'src/providers/chatgpt/adapter.js',
 });

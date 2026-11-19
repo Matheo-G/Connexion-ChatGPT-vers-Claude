@@ -6,6 +6,10 @@
  *   3. deliver it to the target AI (open/focus, insert, send);
  *   4. optionally come back to the source tab.
  *
+ * The way back (step 9) uses the same machinery: when the source is an AI
+ * that executes briefs (Claude, `returnTo`), its answer goes back to the
+ * ChatGPT conversation the brief came from (see conversation-links.js).
+ *
  * Every step is reported to the source tab (PIPELINE_STATUS) so its UI can
  * show progress; the final result (or RouterError) is returned to the caller.
  * Independent of how the job was triggered (button, shortcut, later: voice).
@@ -24,7 +28,9 @@ import { sendToTab, createRequestId } from '../services/messaging.js';
 import { createLogger } from '../utils/logger.js';
 import { readSource } from './source-session.js';
 import { deliverText } from './delivery.js';
-import { focusTab, getTab } from './tab-manager.js';
+import { focusTab, getTab, queryTabs, pickBestTab } from './tab-manager.js';
+import { rememberLink, findLink } from './conversation-links.js';
+import { composeReturn } from '../workflows/return-kit.js';
 import { withKeepAlive } from './keepalive.js';
 
 const log = createLogger('pipeline');
@@ -34,7 +40,7 @@ const running = new Set();
 
 /**
  * @typedef {Object} RouteRequest
- * @property {string} [sourceProviderId='chatgpt']
+ * @property {string} [sourceProviderId='chatgpt']  'claude' for the way back.
  * @property {number} [sourceTabId]    Defaults to the most relevant source tab.
  * @property {string} [messageId]      Defaults to the latest answer.
  * @property {string} [workflowId]     Defaults to the user setting.
@@ -70,6 +76,11 @@ export async function runPipeline(request = {}) {
 }
 
 async function execute(request, job, settings) {
+  const source = getProvider(job.sourceProviderId);
+  return source.returnTo ? executeReturn(source, job, settings) : executeForward(request, job, settings);
+}
+
+async function executeForward(request, job, settings) {
   const { sourceProviderId } = job;
   if (request.workflowId) getWorkflow(request.workflowId); // fail fast on an unknown id
 
@@ -106,9 +117,66 @@ async function execute(request, job, settings) {
     onStep: (step) => notify(job, step),
   });
 
+  rememberLink({
+    targetId: target.id,
+    targetTabId: delivery.tabId,
+    targetUrl: delivery.url,
+    sourceUrl: (await getTab(answer.tabId))?.url ?? '',
+    sourceTabId: answer.tabId,
+    workflowId: workflow.id,
+    at: Date.now(),
+  });
+
   if (options.returnToSource) await returnTo(answer.tabId);
   notify(job, PipelineStep.DONE, { targetName: target.name, sent: delivery.sent });
   return { jobId: job.jobId, workflowId: workflow.id, workflowReason: reason, targetId: target.id, ...delivery };
+}
+
+/**
+ * Way back: the executing AI's answer → the ChatGPT conversation of the
+ * brief (or, without a known link, the most relevant ChatGPT tab).
+ * Always an existing conversation, never a new chat; no workflow transform.
+ */
+async function executeReturn(source, job, settings) {
+  notify(job, PipelineStep.EXTRACTING);
+  const answer = await readSource(source.id, { tabId: job.tabId, messageId: job.messageId });
+  job.tabId = answer.tabId;
+  lockAnswer(job, `${answer.tabId}:${answer.messageId ?? 'latest'}`);
+
+  const destination = getProvider(source.returnTo);
+  const page = await getTab(answer.tabId);
+  const link = await findLink({ targetId: source.id, tabId: answer.tabId, url: page?.url ?? '', newChatUrl: source.newChatUrl });
+  const workflow = link ? findWorkflow(link.workflowId) : null;
+  const pageUrl = link?.sourceUrl || pickBestTab(await queryTabs(destination.matches))?.url;
+  Object.assign(job, { workflowId: workflow?.id ?? 'default', targetId: destination.id });
+  log.info(`Job ${job.jobId}: ${source.id} → ${destination.id} (${link ? 'conversation of the brief' : 'latest tab'})`);
+
+  notify(job, PipelineStep.TRANSFORMING);
+  const text = composeReturn({ sourceName: source.name, markdown: answer.markdown, command: workflow?.command });
+  job.text = text;
+
+  const delivery = await deliverText(destination.id, text, {
+    autoSend: settings.autoSend,
+    newConversation: false,
+    pageUrl,
+    preferredTabId: link?.sourceTabId,
+    activate: true,
+    sourceTabId: answer.tabId,
+    timeouts: scaleTimeouts(settings.patience),
+    onStep: (step) => notify(job, step),
+  });
+
+  notify(job, PipelineStep.DONE, { targetName: destination.name, sent: delivery.sent });
+  return { jobId: job.jobId, workflowId: job.workflowId, targetId: destination.id, linked: Boolean(link), ...delivery };
+}
+
+/** A workflow that may have been removed since the brief was sent. */
+function findWorkflow(id) {
+  try {
+    return getWorkflow(id);
+  } catch {
+    return null;
+  }
 }
 
 /**

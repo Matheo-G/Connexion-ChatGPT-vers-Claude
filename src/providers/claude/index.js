@@ -11,5 +11,7 @@ export default Object.freeze({
   newChatUrl: 'https://claude.ai/new',
   roles: Object.freeze(['target']),
   aliases: Object.freeze(['claude']),
+  /** Its answers can be sent back there ("↩ ChatGPT" button, step 9). */
+  returnTo: 'chatgpt',
   adapterPath: 'src/providers/claude/adapter.js',
 });

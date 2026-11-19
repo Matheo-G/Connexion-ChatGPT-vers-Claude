@@ -44,7 +44,7 @@ const BUILD = path.join(FIXTURES, '.build');
 function buildFixtureScripts() {
   const { buildSync } = require(path.join(ROOT, 'node_modules/esbuild'));
   buildSync({
-    entryPoints: [path.join(FIXTURES, 'src/claude-composer.js'), path.join(FIXTURES, 'src/copilot-composer.js')],
+    entryPoints: ['claude-composer.js', 'copilot-composer.js', 'chatgpt-composer.js'].map((f) => path.join(FIXTURES, 'src', f)),
     outdir: BUILD,
     bundle: true,
     format: 'iife',

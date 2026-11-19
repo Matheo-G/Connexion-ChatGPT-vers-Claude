@@ -26,6 +26,10 @@ import copilot from './copilot/index.js';
  * @property {readonly ProviderRole[]} roles
  * @property {string} adapterPath   Extension-relative path of the DOM adapter.
  * @property {readonly string[]} [aliases]  Names the user may say/write to pick it ("envoie à Copilot").
+ * @property {string} [returnTo]   Its answers can go back to this provider (Claude → ChatGPT):
+ *   its adapter then also reads answers (SOURCE_EXTRACT).
+ * @property {boolean} [receivesReturns]  Receives those answers (ChatGPT): its adapter also
+ *   writes (TARGET_SUBMIT), without being offered as a destination for briefs.
  */
 
 /** @type {readonly ProviderDefinition[]} */
@@ -34,6 +38,15 @@ const PROVIDERS = Object.freeze([chatgpt, claude, copilot]);
 /** @returns {readonly ProviderDefinition[]} */
 export function listProviders() {
   return PROVIDERS;
+}
+
+/**
+ * Whether a tab of this provider can be written to: a destination for
+ * briefs, or the AI receiving the results back.
+ * @param {ProviderDefinition} provider
+ */
+export function canReceive(provider) {
+  return provider.roles.includes('target') || Boolean(provider.receivesReturns);
 }
 
 /**

@@ -1,5 +1,12 @@
 # Journal des versions
 
+## 1.2.0 — Retour vers ChatGPT (étape 9)
+
+- **Bouton « ↩ ChatGPT »** sous chaque réponse de Claude : la réponse repart dans **la conversation ChatGPT d'origine** du brief (même si d'autres onglets ChatGPT ont été ouverts depuis, ou si elle a été fermée : elle est rouverte), précédée de « ↩ Retour de Claude · /commande ».
+- Lecture de Claude en Markdown : texte avant et après les appels d'outils (Figma…) joint, réflexions et outils ignorés, artefacts mentionnés par leur titre. Pas de bouton tant que Claude écrit.
+- ChatGPT peut recevoir du texte (insertion vérifiée, envoi selon le réglage « Envoi automatique »). Refus clair, sans rien taper, si ChatGPT est encore en train de répondre.
+- Diagnostic Claude enrichi : structure de la conversation (marqueurs, `data-testid`, dernier échange), toujours sans texte.
+
 ## 1.1.0 — Copilot, choix de la destination, routage vocal, consignes par défaut
 
 - **Copilot** (Microsoft 365 Copilot Chat, `copilot.cloud.microsoft`) comme destination. Son éditeur Lexical n'accepte qu'un collage : le collage sélectionne d'abord le contenu, puis synchronise la sélection. Une redirection vers la connexion Microsoft donne « non connecté », sans nouvel essai.

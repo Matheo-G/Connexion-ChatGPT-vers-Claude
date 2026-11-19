@@ -11,6 +11,7 @@ import { deliverText } from './delivery.js';
 import { readSource } from './source-session.js';
 import { diagnoseProvider } from './diagnostics.js';
 import { runPipeline } from './pipeline.js';
+import { findProviderByUrl } from '../providers/registry.js';
 
 const log = createLogger('router');
 
@@ -20,9 +21,19 @@ export const backgroundHandlers = {
     log.debug('Content ready', { providerId, tabId: sender.tab?.id, url });
   },
 
-  /** From the "Send to Claude" button: the sender's tab is the source. */
+  /**
+   * From a button under an answer: the sender's tab is the source — ChatGPT
+   * ("➤ Claude"), or Claude on the way back ("↩ ChatGPT").
+   */
   [MessageType.ROUTE_REQUEST]: ({ messageId, workflowId, targetProviderId, trigger = 'button' }, sender) =>
-    runPipeline({ sourceTabId: sender.tab?.id, messageId, workflowId, targetProviderId, trigger }),
+    runPipeline({
+      sourceProviderId: findProviderByUrl(sender.tab?.url ?? '')?.id,
+      sourceTabId: sender.tab?.id,
+      messageId,
+      workflowId,
+      targetProviderId,
+      trigger,
+    }),
 
   [MessageType.OPEN_TARGET]: ({ providerId = 'claude', activate, newConversation }, sender) =>
     prepareTarget(providerId, { activate, newConversation, sourceTabId: sender.tab?.id }),

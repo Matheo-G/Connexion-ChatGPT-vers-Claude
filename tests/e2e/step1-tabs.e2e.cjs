@@ -118,8 +118,8 @@ test('tab closed while loading → TARGET_UNAVAILABLE', async () => {
   assert.equal(res.error.code, 'TARGET_UNAVAILABLE');
 });
 
-test('unknown or source-only provider → PROVIDER_NOT_FOUND', async () => {
-  const res = await OPEN({ providerId: 'chatgpt' });
+test('unknown provider → PROVIDER_NOT_FOUND', async () => {
+  const res = await OPEN({ providerId: 'gemini' });
   assert.equal(res.error.code, 'PROVIDER_NOT_FOUND');
 });
 

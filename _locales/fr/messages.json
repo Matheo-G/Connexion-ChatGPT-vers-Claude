@@ -121,13 +121,13 @@
     "message": "La communication avec l'onglet a échoué. Rechargez la page."
   },
   "error_SOURCE_UNAVAILABLE": {
-    "message": "Impossible de lire la page ChatGPT."
+    "message": "Impossible de lire la page de l'IA (onglet fermé ?)."
   },
   "error_NO_CONTENT": {
     "message": "Aucune réponse à envoyer pour le moment."
   },
   "error_STILL_GENERATING": {
-    "message": "ChatGPT est encore en train de répondre. Patientez un instant."
+    "message": "L'IA est encore en train de répondre. Patientez un instant, puis réessayez."
   },
   "error_TARGET_UNAVAILABLE": {
     "message": "Impossible d'ouvrir l'IA de destination."
@@ -480,5 +480,13 @@
   },
   "menuWorkflow": {
     "message": "Workflow"
+  },
+  "returnButtonTitle": {
+    "message": "Renvoyer cette réponse à $NAME$, dans la conversation d'origine",
+    "placeholders": {
+      "name": {
+        "content": "$1"
+      }
+    }
   }
 }

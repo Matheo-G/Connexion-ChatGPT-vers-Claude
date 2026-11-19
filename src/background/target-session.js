@@ -10,7 +10,7 @@
  *   newConversation = false → the best existing tab, else a new tab.
  */
 
-import { getProvider } from '../providers/registry.js';
+import { getProvider, canReceive } from '../providers/registry.js';
 import { DEFAULT_SETTINGS, scaleTimeouts } from '../shared/defaults.js';
 import { isSamePage, urlMatchesAny } from '../utils/url.js';
 import { RouterError, ErrorCode } from '../shared/errors.js';
@@ -33,6 +33,10 @@ const log = createLogger('target-session');
  * @property {boolean} [activate=true]    Bring the tab to the front.
  * @property {number}  [sourceTabId]      Open new tabs next to this one.
  * @property {boolean} [fresh=false]      Recovery: reload a new chat even if a tab looks ready.
+ * @property {string}  [pageUrl]          The tab must show this conversation (way back to
+ *   ChatGPT): a tab already on it, else `preferredTabId`, else the best tab, navigated to it.
+ *   Overrides `newConversation`; `fresh` reloads it.
+ * @property {number}  [preferredTabId]   Tab to reuse for `pageUrl` (the one the brief came from).
  * @property {ReturnType<typeof scaleTimeouts>} [timeouts]  Patience-scaled waits.
  *
  * @typedef {Object} PreparedTarget
@@ -50,16 +54,20 @@ const log = createLogger('target-session');
  */
 export async function prepareTarget(providerId, options = {}) {
   const startedAt = Date.now();
-  const provider = getProvider(providerId, 'target');
+  const provider = getProvider(providerId);
+  if (!canReceive(provider)) throw new RouterError(ErrorCode.PROVIDER_NOT_FOUND, `${provider.name} cannot receive text`);
   const {
     newConversation = DEFAULT_SETTINGS.newConversation,
     activate = true,
     sourceTabId,
     fresh = false,
     timeouts = scaleTimeouts(),
+    pageUrl,
+    preferredTabId,
   } = options;
 
-  const { tab, mode, loaded } = await acquireTab(provider, { newConversation, activate, sourceTabId, fresh, timeouts });
+  const choice = { newConversation, activate, sourceTabId, fresh, timeouts, pageUrl, preferredTabId };
+  const { tab, mode, loaded } = await acquireTab(provider, choice);
   if (activate) await focusTab(tab);
   const loadedTab = await loaded;
   assertStillOnProvider(provider, loadedTab);
@@ -96,15 +104,25 @@ function assertStillOnProvider(provider, tab) {
  * Chooses the tab and starts loading it. Returns without awaiting the load
  * so the tab can be focused immediately (instant visual feedback).
  */
-async function acquireTab(provider, { newConversation, activate, sourceTabId, fresh, timeouts }) {
+async function acquireTab(provider, { newConversation, activate, sourceTabId, fresh, timeouts, pageUrl, preferredTabId }) {
   const tabs = await queryTabs(provider.matches);
   const best = pickBestTab(tabs);
-  const navigate = (tab) => ({
+  const navigate = (tab, url = provider.newChatUrl) => ({
     tab,
     mode: 'navigated',
-    loaded: navigateAndWait(tab.id, provider.newChatUrl, timeouts.TAB_LOAD),
+    loaded: navigateAndWait(tab.id, url, timeouts.TAB_LOAD),
   });
   const reuse = (tab) => ({ tab, mode: 'reused', loaded: waitForTabComplete(tab.id, { timeout: timeouts.TAB_LOAD }) });
+
+  if (pageUrl) {
+    // A given conversation (way back to ChatGPT): never a new chat.
+    const onPage = pickBestTab(tabs.filter((t) => isSamePage(t.url, pageUrl)));
+    if (onPage && !fresh) return reuse(onPage);
+    const preferred = tabs.find((t) => t.id === preferredTabId) ?? onPage ?? best;
+    if (preferred) return navigate(preferred, pageUrl);
+    const created = await createTab(pageUrl, { active: activate, sourceTabId });
+    return { tab: created, mode: 'created', loaded: waitForTabComplete(created.id, { timeout: timeouts.TAB_LOAD }) };
+  }
 
   if (fresh) {
     // Recovery after a failed attempt: always load a brand-new chat page.
