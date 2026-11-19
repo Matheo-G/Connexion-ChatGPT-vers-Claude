@@ -20,7 +20,14 @@ const ROOT = path.resolve(__dirname, '../..');
 const EXTENSION = process.env.EXTENSION_DIR ? path.resolve(process.env.EXTENSION_DIR) : ROOT;
 const FIXTURES = path.join(__dirname, 'fixtures');
 const https = require('node:https');
-const HOSTS = ['claude.ai', 'chatgpt.com', 'chat.openai.com'];
+const HOSTS = [
+  'claude.ai',
+  'chatgpt.com',
+  'chat.openai.com',
+  'copilot.cloud.microsoft',
+  'm365.cloud.microsoft',
+  'login.microsoftonline.com',
+];
 
 function loadPlaywright() {
   try {
@@ -37,7 +44,7 @@ const BUILD = path.join(FIXTURES, '.build');
 function buildFixtureScripts() {
   const { buildSync } = require(path.join(ROOT, 'node_modules/esbuild'));
   buildSync({
-    entryPoints: [path.join(FIXTURES, 'src/claude-composer.js')],
+    entryPoints: [path.join(FIXTURES, 'src/claude-composer.js'), path.join(FIXTURES, 'src/copilot-composer.js')],
     outdir: BUILD,
     bundle: true,
     format: 'iife',
@@ -54,6 +61,16 @@ function respond(url, control) {
   if (url.pathname.startsWith('/__fixtures/')) {
     const file = path.join(BUILD, path.basename(url.pathname));
     return { contentType: 'text/javascript', body: fs.readFileSync(file) };
+  }
+  if (url.hostname === 'login.microsoftonline.com') {
+    return html(fs.readFileSync(path.join(FIXTURES, 'microsoft-login.html'), 'utf8'));
+  }
+  if (url.hostname.endsWith('cloud.microsoft')) {
+    if (url.pathname !== '/favicon.ico') control.copilotLoads.push(url.pathname);
+    if (control.copilotLoggedOut) {
+      return { status: 302, headers: { location: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize' } };
+    }
+    return withConfig(fs.readFileSync(path.join(FIXTURES, 'copilot.html'), 'utf8'), control.copilot);
   }
   if (url.hostname !== 'claude.ai') {
     return withConfig(fs.readFileSync(path.join(FIXTURES, 'chatgpt.html'), 'utf8'), control.chatgpt);
@@ -128,9 +145,22 @@ async function launch() {
    *   chatgpt   window.__FIXTURE__ of the ChatGPT page (see fixtures/chatgpt.html);
    *   loggedOut every Claude page redirects to /login;
    *   fixtureQueue  per-load fixtures for the next Claude pages (then `fixture`);
-   *   claudeLoads   paths of the Claude pages served so far (read-only log).
+   *   claudeLoads   paths of the Claude pages served so far (read-only log);
+   *   copilot       window.__FIXTURE__ of the Copilot page (see fixtures/src/copilot-composer.js);
+   *   copilotLoggedOut  Copilot pages redirect to login.microsoftonline.com;
+   *   copilotLoads  paths of the Copilot pages served so far.
    */
-  const control = { hang: null, fixture: {}, chatgpt: {}, loggedOut: false, fixtureQueue: [], claudeLoads: [] };
+  const control = {
+    hang: null,
+    fixture: {},
+    chatgpt: {},
+    loggedOut: false,
+    fixtureQueue: [],
+    claudeLoads: [],
+    copilot: {},
+    copilotLoggedOut: false,
+    copilotLoads: [],
+  };
   const server = await startFixtureServer(control);
   const { port } = server.address();
   const rules = HOSTS.map((host) => `MAP ${host}:443 127.0.0.1:${port}`).join(', ');

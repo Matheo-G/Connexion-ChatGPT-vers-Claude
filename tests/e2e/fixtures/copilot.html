@@ -1,0 +1,21 @@
+<!doctype html>
+<!-- Stand-in for Microsoft 365 Copilot Chat: Lexical editor, Fluent-like composer, French UI. -->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Microsoft 365 Copilot (fixture)</title>
+    <style>
+      body { font-family: system-ui; margin: 2rem; }
+      .fai-ChatInput { border: 1px solid #ccc; border-radius: 12px; padding: 12px; display: flex; gap: 8px; }
+      #m365-chat-editor-target-element { flex: 1; min-height: 40px; outline: none; }
+    </style>
+  </head>
+  <body>
+    <ul id="messages"></ul>
+    <div class="fai-ChatInput" role="group">
+      <div id="m365-chat-editor-target-element" role="textbox" aria-label="Message à Copilot"></div>
+      <button id="send" class="fai-SendButton" type="button" aria-label="Envoyer" disabled>➤</button>
+    </div>
+    <script src="/__fixtures/copilot-composer.js"></script>
+  </body>
+</html>

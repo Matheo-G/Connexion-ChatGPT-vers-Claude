@@ -56,11 +56,11 @@ const STATE_ICON = { idle: 'send', success: 'check', error: 'alert' };
  * @param {string | null} [options.badge]  Workflow detected for this answer ("/figma"), shown when idle.
  * @param {string} options.title       Tooltip / accessible name.
  * @param {string} options.menuTitle
- * @param {{id: string, label: string, icon: string, command: string | null}[]} options.workflows
- * @param {string | null} [options.currentWorkflowId]  Highlighted in the menu.
- * @param {(workflowId?: string) => void} options.onSend
+ * @param {import('./workflow-menu.js').MenuSection[]} options.sections  Destination / workflow choices.
+ * @param {(choice?: Record<string, string>) => void} options.onSend
+ *   Without choice: the defaults shown on the button; from the menu: {workflowId} or {targetProviderId}.
  */
-export function createSendButton({ label, badge = null, title, menuTitle, workflows, currentWorkflowId = null, onSend }) {
+export function createSendButton({ label, badge = null, title, menuTitle, sections, onSend }) {
   const { host, root } = createShadowHost({ marker: BUTTON_MARKER, css: CSS });
   root.innerHTML = `
     <div class="split">
@@ -76,7 +76,7 @@ export function createSendButton({ label, badge = null, title, menuTitle, workfl
   // control ("click Claude") works (WCAG 2.5.3), then adds the full description.
   main.setAttribute('aria-label', `${[label, badge].filter(Boolean).join(' ')} — ${title}`);
   more.setAttribute('aria-label', menuTitle);
-  more.hidden = workflows.length < 2;
+  more.hidden = !sections.some((section) => section.items.length > 1);
 
   let resetTimer = null;
 
@@ -101,9 +101,8 @@ export function createSendButton({ label, badge = null, title, menuTitle, workfl
     more.setAttribute('aria-expanded', 'true');
     menu = openWorkflowMenu({
       anchor: host,
-      title: menuTitle,
-      workflows,
-      currentId: currentWorkflowId,
+      label: menuTitle,
+      sections,
       onChoose: trigger,
       onClose: () => {
         menu = null;
@@ -113,9 +112,9 @@ export function createSendButton({ label, badge = null, title, menuTitle, workfl
     });
   }
 
-  function trigger(workflowId) {
+  function trigger(choice) {
     if (host.dataset.state === 'busy') return; // no double send
-    onSend(workflowId);
+    onSend(choice);
   }
 
   main.addEventListener('click', (event) => {

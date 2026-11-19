@@ -12,7 +12,8 @@
 
 import { getProvider } from '../providers/registry.js';
 import { DEFAULT_SETTINGS, scaleTimeouts } from '../shared/defaults.js';
-import { isSamePage } from '../utils/url.js';
+import { isSamePage, urlMatchesAny } from '../utils/url.js';
+import { RouterError, ErrorCode } from '../shared/errors.js';
 import { createLogger } from '../utils/logger.js';
 import {
   queryTabs,
@@ -60,12 +61,35 @@ export async function prepareTarget(providerId, options = {}) {
 
   const { tab, mode, loaded } = await acquireTab(provider, { newConversation, activate, sourceTabId, fresh, timeouts });
   if (activate) await focusTab(tab);
-  await loaded;
+  const loadedTab = await loaded;
+  assertStillOnProvider(provider, loadedTab);
   const page = await ensureContentScript(tab.id, { timeout: timeouts.CONTENT_READY });
 
   const result = { tabId: tab.id, providerId, mode, page, durationMs: Date.now() - startedAt };
   log.info(`${provider.name} ready`, result);
   return result;
+}
+
+/** Hosts of sign-in pages a site may redirect to (Microsoft, Google, generic). */
+const LOGIN_HOST = /(^|\.)(login\.microsoftonline\.com|login\.live\.com|accounts\.google\.com)$|(^|\.)(login|auth|signin|sso)\./i;
+
+/**
+ * After loading, the tab may have been redirected away from the AI (e.g.
+ * Copilot → login.microsoftonline.com when the session expired). Our script
+ * cannot run there: report it clearly instead of a vague "unavailable".
+ */
+function assertStillOnProvider(provider, tab) {
+  if (!tab) return;
+  // Without the "tabs" permission, Chrome hides the URL of pages outside our
+  // host permissions: a hidden URL therefore means "left the AI's site" —
+  // in practice its sign-in page (Microsoft, Google…).
+  if (!tab.url) throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, `${provider.name} redirected outside its site`);
+  if (urlMatchesAny(tab.url, provider.matches)) return;
+  const host = new URL(tab.url).hostname;
+  if (LOGIN_HOST.test(host)) {
+    throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, `${provider.name} redirected to ${host}`);
+  }
+  throw new RouterError(ErrorCode.TARGET_UNAVAILABLE, `${provider.name} redirected to ${host}`, { url: tab.url });
 }
 
 /**

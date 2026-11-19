@@ -84,13 +84,13 @@ test('turning detection off removes badges live and sends the raw answer', async
   assert.deepEqual(nonEmptyLines(await receivedByClaude()), nonEmptyLines(EXPECTED));
 });
 
-test('workflow menu: six workflows, keyboard navigation, outside the page layout', async () => {
+test('send menu: destinations then six workflows, keyboard navigation, outside the page layout', async () => {
   const page = await openChatGPT();
   await page.locator(`${BUTTON} .more`).nth(0).click();
   const menu = page.locator(MENU);
   await menu.waitFor();
 
-  assert.deepEqual(await menu.locator('button').allTextContents(), [
+  assert.deepEqual(await menu.locator('[data-section="workflowId"] button').allTextContents(), [
     'Envoyer tel quel',
     'Design Figma/figma',
     'Développement/code',
@@ -103,8 +103,16 @@ test('workflow menu: six workflows, keyboard navigation, outside the page layout
   const viewport = page.viewportSize();
   assert.ok(box.y >= 0 && box.y + box.height <= viewport.height, 'menu fully visible');
 
+  // Focus starts on the current destination (Claude); arrows walk through every item.
+  const focused = () => page.evaluate((sel) => {
+    const el = document.querySelector(sel).shadowRoot.activeElement;
+    return el?.dataset.workflow ?? el?.dataset.target;
+  }, MENU);
+  assert.equal(await focused(), 'claude');
   await page.keyboard.press('ArrowDown');
-  assert.equal(await page.evaluate((sel) => document.querySelector(sel).shadowRoot.activeElement?.dataset.workflow, MENU), 'figma');
+  assert.equal(await focused(), 'copilot');
+  await page.keyboard.press('ArrowDown');
+  assert.equal(await focused(), 'default');
   await page.keyboard.press('Escape');
   await menu.waitFor({ state: 'detached' });
 });

@@ -19,12 +19,12 @@ Avant chaque publication :
 ## Fiche
 
 - **Nom** : Mathéo AI Router
-- **Résumé (132 caractères max.)** : Envoie en un clic les réponses de ChatGPT vers Claude, avec des workflows (/figma, /code…). Sans API, sans coût supplémentaire.
+- **Résumé (132 caractères max.)** : Envoie en un clic les réponses de ChatGPT vers Claude ou Copilot, avec des workflows (/figma, /code…). Sans API.
 - **Catégorie** : Productivité
 - **Langue** : Français
 - **Description** :
 
-> Mathéo AI Router transforme ChatGPT en orchestrateur. Sous chaque réponse, un bouton « ➤ Claude » l'envoie dans une nouvelle conversation Claude, en Markdown propre (code, tableaux, listes, formules), sans copier-coller.
+> Mathéo AI Router transforme ChatGPT en orchestrateur. Sous chaque réponse, un bouton « ➤ Claude » l'envoie dans une nouvelle conversation Claude ou Copilot (au choix, ou selon ce que vous dictez), en Markdown propre (code, tableaux, listes, formules), sans copier-coller.
 >
 > • Workflows : commencez votre message par /figma, /code, /video, /job ou /mail. Claude reçoit des instructions adaptées, votre demande d'origine et ses liens (un lien Figma devient le fichier de travail).
 > • Raccourci clavier Alt+Maj+C, depuis n'importe quel onglet.
@@ -42,13 +42,14 @@ Avant chaque publication :
 | `scripting` | Réinjecter le script dans les onglets ChatGPT et Claude déjà ouverts (installation, mise à jour, onglet sans script), pour ne pas obliger l'utilisateur à recharger. |
 | Accès à `chatgpt.com`, `chat.openai.com` | Lire la réponse que l'utilisateur choisit d'envoyer et afficher le bouton « ➤ Claude ». |
 | Accès à `claude.ai` | Ouvrir ou activer l'onglet Claude, insérer le texte et l'envoyer à la demande de l'utilisateur. |
+| Accès à `copilot.cloud.microsoft`, `m365.cloud.microsoft` | Même chose pour Microsoft Copilot (destination au choix). |
 
 Pas de `tabs` (l'accès aux sites suffit pour lister leurs onglets), pas de `<all_urls>`, pas de code distant.
 
 ## Confidentialité (déclaration et politique)
 
 - **Données collectées** : aucune. L'extension n'a pas de serveur et ne contacte aucun service tiers.
-- **Contenu traité** : la réponse ChatGPT que **vous** choisissez d'envoyer, ainsi que votre message d'origine (pour la demande et ses liens). Ils ne vont que de l'onglet ChatGPT à l'onglet Claude, dans votre navigateur, avec vos comptes.
+- **Contenu traité** : la réponse ChatGPT que **vous** choisissez d'envoyer, ainsi que votre message d'origine (pour la demande et ses liens). Ils ne vont que de l'onglet ChatGPT à l'onglet de l'IA choisie (Claude ou Copilot), dans votre navigateur, avec vos comptes.
 - **Stockage local** : réglages (`chrome.storage.sync`, synchronisés par Chrome avec votre profil), historique des envois limité à un aperçu de 140 caractères et désactivable, consignes personnelles (`chrome.storage.local`). Tout s'efface depuis les réglages ou en désinstallant l'extension.
 - **Diagnostic** : le bouton « Copier le diagnostic » produit un squelette de page **sans aucun texte de conversation**, copié dans votre presse-papiers. Rien n'est envoyé automatiquement.
 

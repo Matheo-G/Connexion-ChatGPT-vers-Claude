@@ -6,7 +6,13 @@
 
 import { getSettings, updateSettings, resetSettings, onSettingsChanged } from '../services/settings.js';
 import { clearHistory } from '../services/history.js';
-import { getWorkflowNotes, setWorkflowNotes, NOTES_MAX_LENGTH } from '../services/workflow-notes.js';
+import {
+  getWorkflowNotes,
+  setWorkflowNotes,
+  resetWorkflowNotes,
+  effectiveNotes,
+  NOTES_MAX_LENGTH,
+} from '../services/workflow-notes.js';
 import { listWorkflows } from '../workflows/registry.js';
 import { buildChatGPTInstructions } from '../workflows/chatgpt-instructions.js';
 import { localizeDocument, t } from '../utils/i18n.js';
@@ -148,40 +154,74 @@ function renderChatGPTSetup() {
   return row;
 }
 
-/** One textarea per workflow; saved while typing (debounced). */
+/**
+ * One textarea per workflow, saved while typing (debounced). It shows the
+ * instructions in force: the user's version, else the workflow's default.
+ * "Rétablir" brings the default back; "[bracketed]" parts are listed as to-do.
+ */
 function renderWorkflowNotes() {
   const intro = el('p', 'row__hint notes__intro', t('optWorkflowNotesHint'));
-  const rows = listWorkflows().map((workflow) => {
-    const id = `notes-${workflow.id}`;
-    const row = el('div', 'row row--stacked');
-    const label = el('label', 'row__label', t(workflow.labelKey) || workflow.label);
-    label.htmlFor = id;
-    if (workflow.command) label.append(' ', el('kbd', '', workflow.command));
-    const textarea = el('textarea', 'textarea');
-    Object.assign(textarea, { id, rows: 2, maxLength: NOTES_MAX_LENGTH, placeholder: t('optWorkflowNotesPlaceholder') });
-    textarea.dataset.workflow = workflow.id;
-    const counter = el('span', 'counter');
-    const updateCounter = () => (counter.textContent = t('optWorkflowNotesCount', [String(textarea.value.length), String(NOTES_MAX_LENGTH)]));
-    let timer = null;
-    textarea.addEventListener('input', () => {
-      updateCounter();
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
-        await setWorkflowNotes(workflow.id, textarea.value);
-        flashSaved();
-      }, NOTES_SAVE_DELAY);
-    });
-    textarea.addEventListener('focus', updateCounter);
-    row.append(label, textarea, counter);
-    return row;
-  });
+  const rows = listWorkflows().map(renderNotesRow);
   return [intro, ...rows];
 }
 
+function renderNotesRow(workflow) {
+  const id = `notes-${workflow.id}`;
+  const row = el('div', 'row row--stacked');
+  row.dataset.workflow = workflow.id;
+  const label = el('label', 'row__label', t(workflow.labelKey) || workflow.label);
+  label.htmlFor = id;
+  if (workflow.command) label.append(' ', el('kbd', '', workflow.command));
+
+  const textarea = el('textarea', 'textarea');
+  Object.assign(textarea, { id, rows: 4, maxLength: NOTES_MAX_LENGTH, placeholder: t('optWorkflowNotesPlaceholder') });
+  textarea.dataset.workflow = workflow.id;
+
+  const todo = el('p', 'notes__todo');
+  todo.setAttribute('aria-live', 'polite');
+  const counter = el('span', 'counter');
+  const reset = el('button', 'button button--link notes__reset', t('optWorkflowNotesReset'));
+  reset.type = 'button';
+  reset.hidden = true;
+
+  const refresh = (overridden) => {
+    counter.textContent = t('optWorkflowNotesCount', [String(textarea.value.length), String(NOTES_MAX_LENGTH)]);
+    const placeholders = [...new Set(textarea.value.match(/\[[^\]\n]{1,60}\]/g) ?? [])];
+    todo.hidden = !placeholders.length;
+    todo.textContent = placeholders.length ? `${t('optWorkflowNotesTodo')} ${placeholders.join(', ')}` : '';
+    if (overridden !== undefined) reset.hidden = !overridden || !workflow.defaultNotes;
+  };
+
+  let timer = null;
+  textarea.addEventListener('input', () => {
+    refresh(true);
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      await setWorkflowNotes(workflow.id, textarea.value);
+      flashSaved();
+    }, NOTES_SAVE_DELAY);
+  });
+  reset.addEventListener('click', async () => {
+    clearTimeout(timer);
+    await resetWorkflowNotes(workflow.id);
+    textarea.value = workflow.defaultNotes ?? '';
+    refresh(false);
+    flashSaved();
+  });
+
+  textarea.refreshNotes = refresh; // used by fillWorkflowNotes
+  const footer = el('div', 'notes__footer');
+  footer.append(reset, counter);
+  row.append(label, textarea, todo, footer);
+  return row;
+}
+
 async function fillWorkflowNotes() {
-  const notes = await getWorkflowNotes();
-  for (const textarea of document.querySelectorAll('textarea[data-workflow]')) {
-    textarea.value = notes[textarea.dataset.workflow] ?? '';
+  const stored = await getWorkflowNotes();
+  for (const workflow of listWorkflows()) {
+    const textarea = document.getElementById(`notes-${workflow.id}`);
+    textarea.value = effectiveNotes(workflow, stored);
+    textarea.refreshNotes(Object.hasOwn(stored, workflow.id) && stored[workflow.id] !== workflow.defaultNotes);
   }
 }
 

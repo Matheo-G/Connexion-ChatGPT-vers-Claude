@@ -38,7 +38,7 @@ Pour les trouver sur le vrai site : clic droit sur la zone de saisie → **Inspe
 
 ## 3. Logique — `writer.js` (cible) et/ou `reader.js` (source)
 
-**Cible.** Copier `providers/claude/writer.js` puis adapter les sélecteurs. Les parties génériques se réutilisent telles quelles :
+**Cible.** Rien à écrire : `providers/shared/composer.js` contient l'écrivain générique (attente de l'éditeur, insertion vérifiée, envoi confirmé, détection connexion/limite) et le diagnostic. Il suffit de lui passer les sélecteurs (voir l'étape 4 : Claude et Copilot sont configurés ainsi). Il s'appuie sur :
 
 - `utils/rich-text-input.js → insertIntoEditor` : collage simulé, puis `execCommand`, puis réécriture du DOM, avec vérification à chaque essai. Fonctionne avec ProseMirror, Quill, Lexical… ;
 - `utils/dom.js` : `waitForElement`, `queryFirst`, `isEnabled`.
@@ -47,26 +47,26 @@ Pour les trouver sur le vrai site : clic droit sur la zone de saisie → **Inspe
 
 ## 4. Adaptateur — `src/providers/gemini/adapter.js`
 
-Il relie la logique du site au bus de messages :
+Pour une cible, trois lignes suffisent :
 
 ```js
-import { MessageType } from '../../shared/message-types.js';
-import { submit, health } from './writer.js';
+import { createComposerAdapter } from '../shared/composer.js';
+import { SELECTORS, AUTH_PATHS, RATE_LIMIT_PATTERNS } from './selectors.js';
 
-export function createAdapter({ log }) {
-  return {
-    describe: () => ({ path: location.pathname, ...health() }),     // réponse au PING (popup)
-    handlers: {
-      [MessageType.TARGET_SUBMIT]: (payload) => submit(payload, { log }),
-    },
-    destroy() {},
-  };
-}
+export const createAdapter = createComposerAdapter({
+  name: 'Gemini',
+  selectors: SELECTORS,
+  authPaths: AUTH_PATHS,
+  rateLimitPatterns: RATE_LIMIT_PATTERNS,
+  chatPages: /^\/app/,            // pages qui doivent montrer un éditeur (bilan de santé)
+});
 ```
+
+Ajouter aussi `aliases: ['gemini']` dans `index.js` : « envoie-le à Gemini » choisira alors cette IA.
 
 Pour une source, il faut aussi gérer `SOURCE_EXTRACT`, et le bouton d'envoi (`mount.js`) si besoin.
 
-`health()` doit renvoyer `loggedIn`, `editorFound` et `recognized` : la popup affiche l'état en conséquence (« Non connecté », « Page non reconnue »).
+`health()`, fourni par le module générique, renvoie `loggedIn`, `editorFound` et `recognized` : la popup affiche l'état en conséquence (« Non connecté », « Page non reconnue »). Si le site redirige vers une page de connexion externe, la préparation de l'onglet le détecte (« non connecté »).
 
 ## 5. Enregistrement
 

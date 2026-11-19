@@ -1,5 +1,15 @@
 # Journal des versions
 
+## 1.1.0 — Copilot, choix de la destination, routage vocal, consignes par défaut
+
+- **Copilot** (Microsoft 365 Copilot Chat, `copilot.cloud.microsoft`) comme destination. Son éditeur Lexical n'accepte qu'un collage : le collage sélectionne d'abord le contenu, puis synchronise la sélection. Une redirection vers la connexion Microsoft donne « non connecté », sans nouvel essai.
+- **Destination générique** : `providers/shared/composer.js` (écrivain, diagnostic, adaptateur). Claude et Copilot ne sont plus que des configurations, et une nouvelle IA cible ne demande qu'un fichier de sélecteurs.
+- **Choix au clic** : le menu ▾ propose « Envoyer vers » (Claude, Copilot) puis « Workflow ».
+- **Routage vocal** : « …, envoie-le à Copilot » dans le message ChatGPT choisit la destination (affichée sur le bouton). La phrase est retirée de la demande transmise. ChatGPT reçoit la consigne de ne pas en parler dans son brief. Les simples mentions (« écris à Claude, ma collègue ») ne déclenchent rien.
+- **Consignes par défaut** pour /figma, /code, /video, /job, /mail. Elles restent modifiables, peuvent être vidées (choix respecté) et se rétablissent d'un clic. Les champs [à compléter] sont signalés.
+- `[hidden]` cache toujours, même sur un bouton stylé.
+
+
 ## 1.0.0 — Finitions (étape 8)
 
 - **Revue de code** : ESLint strict (`npm run lint`), code mort supprimé, fonctions internes rendues privées. Corrections :

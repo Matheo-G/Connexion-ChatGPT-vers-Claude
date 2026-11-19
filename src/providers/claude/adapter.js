@@ -1,23 +1,16 @@
 /**
- * @file Claude DOM adapter (runs inside claude.ai).
- * Wires the writer to the message bus; DOM details live in writer.js / selectors.js.
+ * @file Claude DOM adapter (runs inside claude.ai): the generic composer
+ * target (providers/shared/composer.js) configured with Claude's page markers.
  */
 
-import { MessageType } from '../../shared/message-types.js';
-import { submit, health } from './writer.js';
-import { snapshot } from './diagnostics.js';
+import { createComposerAdapter } from '../shared/composer.js';
+import { SELECTORS, AUTH_PATHS, RATE_LIMIT_PATTERNS } from './selectors.js';
 
-/**
- * @param {{log: ReturnType<import('../../utils/logger.js').createLogger>}} context
- * @returns {import('../../content/runtime.js').ProviderAdapter}
- */
-export function createAdapter({ log }) {
-  return {
-    describe: () => ({ path: location.pathname, ...health() }),
-    handlers: {
-      [MessageType.TARGET_SUBMIT]: (payload) => submit(payload, { log }),
-      [MessageType.PROVIDER_DIAGNOSE]: () => snapshot(),
-    },
-    destroy() {},
-  };
-}
+/** @type {(context: {log: Object}) => import('../../content/runtime.js').ProviderAdapter} */
+export const createAdapter = createComposerAdapter({
+  name: 'Claude',
+  selectors: SELECTORS,
+  authPaths: AUTH_PATHS,
+  rateLimitPatterns: RATE_LIMIT_PATTERNS,
+  chatPages: /^\/(new|chat\/|project\/)/,
+});

@@ -1,5 +1,6 @@
 /**
- * @file Workflow picker opened from the send button's chevron.
+ * @file Send options opened from the send button's chevron: destination AI
+ * ("Envoyer vers") and workflow. Choosing an item sends right away.
  *
  * Rendered in its own top-level Shadow DOM host (position: fixed, attached
  * to <body>), NOT inside the page's action bar: ChatGPT's containers may
@@ -23,7 +24,7 @@ const CSS = `
 .menu { min-width: 230px; padding: 4px; border: 1px solid var(--color-border); border-radius: var(--radius-md);
   background: var(--color-bg); color: var(--color-text); box-shadow: var(--shadow-md);
   animation: pop var(--duration-base) var(--ease-out); }
-.title { padding: 6px 10px 4px; font: 600 11px/1.2 var(--font-sans); color: var(--color-text-muted);
+.title { padding: 8px 10px 4px; font: 600 11px/1.2 var(--font-sans); color: var(--color-text-muted);
   text-transform: uppercase; letter-spacing: .05em; }
 button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 10px; width: 100%;
   padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; font: 500 13px/1.3 var(--font-sans); }
@@ -31,43 +32,70 @@ button:hover, button:focus-visible { background: var(--color-surface-hover); }
 button[aria-current="true"] { color: var(--color-accent); }
 svg { flex: none; color: var(--color-text-muted); }
 button[aria-current="true"] svg { color: var(--color-accent); }
+[role="group"] + [role="group"] { margin-top: 4px; padding-top: 4px; border-top: 1px solid var(--color-border); }
 kbd { margin-inline-start: auto; font: 500 11px/1 var(--font-mono); color: var(--color-text-muted); }
 @keyframes pop { from { opacity: 0; transform: translateY(4px) scale(.98); } to { opacity: 1; transform: none; } }
 `;
 
 /**
+ * @typedef {Object} MenuItem
+ * @property {string} id
+ * @property {string} label
+ * @property {string} icon
+ * @property {string | null} [hint]     Shown on the right (e.g. "/figma").
+ * @property {boolean} [current]        Highlighted: what a plain click would use.
+ *
+ * @typedef {Object} MenuSection
+ * @property {string} key               Sent back with the choice ("workflowId", "targetProviderId").
+ * @property {string} title
+ * @property {MenuItem[]} items
+ */
+
+/**
  * @param {Object} options
  * @param {HTMLElement} options.anchor  Element the menu is attached to (positioning).
- * @param {string} options.title
- * @param {{id: string, label: string, icon: string, command: string | null}[]} options.workflows
- * @param {string | null} [options.currentId]  Highlighted (detected) workflow.
- * @param {(workflowId: string) => void} options.onChoose
+ * @param {string} options.label        Accessible name of the whole menu.
+ * @param {MenuSection[]} options.sections
+ * @param {(choice: Record<string, string>) => void} options.onChoose  e.g. {workflowId: 'code'}
  * @param {() => void} [options.onClose]
  * @returns {{close: () => void}}
  */
-export function openWorkflowMenu({ anchor, title, workflows, currentId = null, onChoose, onClose }) {
+export function openWorkflowMenu({ anchor, label, sections, onChoose, onClose }) {
   const { host, root } = createShadowHost({ tag: 'div', marker: MENU_MARKER, css: CSS });
-  root.innerHTML = '<div class="menu" role="menu"><div class="title"></div></div>';
+  root.innerHTML = '<div class="menu" role="menu"></div>';
   const menu = root.querySelector('.menu');
-  menu.querySelector('.title').textContent = title;
-  menu.setAttribute('aria-label', title);
+  menu.setAttribute('aria-label', label);
 
-  const items = workflows.map((workflow) => {
-    const item = document.createElement('button');
-    item.type = 'button';
-    item.setAttribute('role', 'menuitem');
-    item.dataset.workflow = workflow.id;
-    if (workflow.id === currentId) item.setAttribute('aria-current', 'true');
-    item.innerHTML = `${icon(workflow.icon, { size: 15 })}<span></span>${workflow.command ? '<kbd></kbd>' : ''}`;
-    item.querySelector('span').textContent = workflow.label;
-    if (workflow.command) item.querySelector('kbd').textContent = workflow.command;
-    item.addEventListener('click', () => {
-      close();
-      onChoose(workflow.id);
-    });
-    menu.append(item);
-    return item;
-  });
+  const items = [];
+  for (const section of sections.filter((s) => s.items.length > 1)) {
+    const group = document.createElement('div');
+    group.setAttribute('role', 'group');
+    group.dataset.section = section.key;
+    const title = document.createElement('div');
+    title.className = 'title';
+    title.id = `menu-${section.key}`;
+    title.textContent = section.title;
+    group.setAttribute('aria-labelledby', title.id);
+    group.append(title);
+
+    for (const entry of section.items) {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.setAttribute('role', 'menuitem');
+      item.dataset[section.key === 'workflowId' ? 'workflow' : 'target'] = entry.id;
+      if (entry.current) item.setAttribute('aria-current', 'true');
+      item.innerHTML = `${icon(entry.icon, { size: 15 })}<span></span>${entry.hint ? '<kbd></kbd>' : ''}`;
+      item.querySelector('span').textContent = entry.label;
+      if (entry.hint) item.querySelector('kbd').textContent = entry.hint;
+      item.addEventListener('click', () => {
+        close();
+        onChoose({ [section.key]: entry.id });
+      });
+      group.append(item);
+      items.push(item);
+    }
+    menu.append(group);
+  }
 
   document.body.append(host);
   place(host, anchor);

@@ -10,5 +10,6 @@ export default Object.freeze({
   matches: ['https://claude.ai/*'],
   newChatUrl: 'https://claude.ai/new',
   roles: Object.freeze(['target']),
+  aliases: Object.freeze(['claude']),
   adapterPath: 'src/providers/claude/adapter.js',
 });

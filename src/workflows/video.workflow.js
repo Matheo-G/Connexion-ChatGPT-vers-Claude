@@ -12,6 +12,12 @@ export default Object.freeze({
   labelKey: 'workflowVideo',
   label: 'Vidéo Higgsfield',
   icon: 'video',
+  /**
+   * Personal instructions used until the user edits them in the options
+   * (Réglages → Consignes personnelles). [Bracketed] parts are to be completed.
+   */
+  defaultNotes:
+    "- Usage principal : [réseaux sociaux, présentation de projets design / portfolio]. Format par défaut : 9:16 vertical, sauf mention contraire.\n- Mets chaque prompt Higgsfield dans un bloc de code séparé, prêt à copier-coller, sans commentaire à l'intérieur.\n- Style visuel par défaut : épuré, moderne, lumière naturelle douce, palette sobre, cohérent avec un univers de designer produit.\n- Plans courts (5 s idéalement), 3 à 6 plans au total, avec une accroche visuelle forte dans le premier.\n- Si je fournis une image ou une référence, base le premier plan dessus (image-to-video).\n- Indique pour chaque plan s'il vaut mieux partir d'une image fixe ou du texte seul.",
   /** What ChatGPT must prepare for Claude when the message starts with the command. */
   chatgptHint:
     'brief vidéo pour Higgsfield : intention, public, durée, ambiance, style, plans envisagés.',

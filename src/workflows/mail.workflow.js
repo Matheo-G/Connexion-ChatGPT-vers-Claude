@@ -11,6 +11,12 @@ export default Object.freeze({
   labelKey: 'workflowMail',
   label: "Rédaction d'e-mail",
   icon: 'mail',
+  /**
+   * Personal instructions used until the user edits them in the options
+   * (Réglages → Consignes personnelles). [Bracketed] parts are to be completed.
+   */
+  defaultNotes:
+    "- Vouvoiement par défaut, sauf si le contexte montre que je tutoie la personne.\n- Va droit au but : pas de « J'espère que vous allez bien », une idée par paragraphe, 120 mots maximum sauf demande contraire.\n- Objet de 60 caractères maximum, explicite.\n- Signature : « Mathéo » (ajoute [ton titre / téléphone] pour les e-mails professionnels).\n- Si une réponse est attendue, termine par une question ou une action claire avec une échéance.",
   /** What ChatGPT must prepare for Claude when the message starts with the command. */
   chatgptHint:
     "brief d'e-mail : destinataire, objectif, contexte, ton, éléments à inclure.",

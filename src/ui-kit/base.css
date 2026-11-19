@@ -9,6 +9,11 @@
   box-sizing: border-box;
 }
 
+/* `hidden` always wins over component display rules (.button, .feedback…). */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body {
   margin: 0;

@@ -13,6 +13,7 @@ import { RouterError, ErrorCode } from '../shared/errors.js';
 import { urlMatchesAny } from '../utils/url.js';
 import chatgpt from './chatgpt/index.js';
 import claude from './claude/index.js';
+import copilot from './copilot/index.js';
 
 /**
  * @typedef {'source' | 'target'} ProviderRole
@@ -24,10 +25,11 @@ import claude from './claude/index.js';
  * @property {string} newChatUrl    URL opening an empty conversation.
  * @property {readonly ProviderRole[]} roles
  * @property {string} adapterPath   Extension-relative path of the DOM adapter.
+ * @property {readonly string[]} [aliases]  Names the user may say/write to pick it ("envoie à Copilot").
  */
 
 /** @type {readonly ProviderDefinition[]} */
-const PROVIDERS = Object.freeze([chatgpt, claude]);
+const PROVIDERS = Object.freeze([chatgpt, claude, copilot]);
 
 /** @returns {readonly ProviderDefinition[]} */
 export function listProviders() {

@@ -3,7 +3,7 @@
   "name": "__MSG_extName__",
   "short_name": "AI Router",
   "description": "__MSG_extDescription__",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "default_locale": "fr",
   "minimum_chrome_version": "116",
   "background": {
@@ -15,7 +15,9 @@
       "matches": [
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "https://copilot.cloud.microsoft/*",
+        "https://m365.cloud.microsoft/*"
       ],
       "js": [
         "src/content/loader.js"
@@ -55,7 +57,9 @@
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
-    "https://claude.ai/*"
+    "https://claude.ai/*",
+    "https://copilot.cloud.microsoft/*",
+    "https://m365.cloud.microsoft/*"
   ],
   "web_accessible_resources": [
     {
@@ -71,7 +75,9 @@
       "matches": [
         "https://chatgpt.com/*",
         "https://chat.openai.com/*",
-        "https://claude.ai/*"
+        "https://claude.ai/*",
+        "https://copilot.cloud.microsoft/*",
+        "https://m365.cloud.microsoft/*"
       ]
     }
   ]

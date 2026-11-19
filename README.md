@@ -1,9 +1,9 @@
 # 🚀 Mathéo AI Router
 
-Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic envoie une réponse de ChatGPT vers Claude, sans copier-coller, sans API, sans coût supplémentaire.
+Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic envoie une réponse de ChatGPT vers **Claude** ou **Copilot** (Microsoft 365), sans copier-coller, sans API, sans coût supplémentaire.
 
 ```
-Vous → ChatGPT (prépare) → ➤ Claude (exécute : code, Figma via MCP, vidéo, mail…)
+Vous (clavier ou voix) → ChatGPT (prépare) → ➤ Claude / Copilot (exécute : code, Figma via MCP, vidéo, mail…)
 ```
 
 ## Installation
@@ -51,8 +51,9 @@ Commencez votre message à ChatGPT par une commande. Le bouton affiche alors un 
 | `/mail` | Rédige un e-mail prêt à envoyer, en deux versions |
 
 - **Votre demande d'origine et ses liens** sont toujours transmis à Claude, en plus de la réponse de ChatGPT, et c'est votre demande qui prime.
-- La flèche **▾** du bouton permet de choisir un autre workflow pour une réponse.
-- Réglages → **Consignes personnelles par workflow** : par exemple « utilise mon design system ».
+- La flèche **▾** du bouton permet de choisir **la destination** (Claude, Copilot) **ou un autre workflow** pour une réponse.
+- **Routage vocal** : terminez votre message par « …, envoie-le à Copilot » (ou « …dans Claude ») et le bouton visera cette IA. La phrase n'est pas transmise à l'IA.
+- Réglages → **Consignes personnelles par workflow** : des consignes par défaut sont fournies pour chaque workflow. Modifiez-les, videz-les ou rétablissez-les ; les [champs à compléter] sont signalés.
 
 ### Popup et réglages
 
@@ -72,7 +73,8 @@ Commencez votre message à ChatGPT par une commande. Le bouton affiche alors un 
 | Symptôme | Que faire |
 |---|---|
 | Pas de bouton sous les réponses | Popup → Connexions. Si « Page non reconnue » : *Outils de diagnostic → Copier le diagnostic ChatGPT* et l'envoyer (le diagnostic ne contient aucun texte de conversation). |
-| « Vous n'êtes pas connecté » | Se connecter à claude.ai dans ce navigateur. |
+| « Vous n'êtes pas connecté » | Se connecter à claude.ai ou à copilot.cloud.microsoft dans ce navigateur. |
+| Copilot : le texte n'arrive pas | Popup → Outils de diagnostic → **Copier le diagnostic Copilot** (structure seule, sans texte) et l'envoyer. |
 | Connexions « Indisponible » | `chrome://extensions` → ⟳ sur l'extension, puis bouton **Erreurs** si besoin. Le message technique s'affiche dans la popup. |
 | ChatGPT répond « je ne peux pas » à `/figma` | Faire l'étape **Configurer ChatGPT**. |
 | Connexion lente, délais dépassés | Réglages → Avancé → Patience : **Connexion lente**. |

@@ -4,7 +4,7 @@
     "description": "Nom de l'extension"
   },
   "extDescription": {
-    "message": "Envoie en un clic les réponses de ChatGPT vers Claude, et bientôt vers d'autres IA.",
+    "message": "Envoie en un clic les réponses de ChatGPT vers Claude ou Copilot, avec des workflows (/figma, /code…).",
     "description": "Description affichée dans le Chrome Web Store et chrome://extensions"
   },
   "popupSubtitle": {
@@ -163,9 +163,6 @@
         "content": "$1"
       }
     }
-  },
-  "workflowMenuTitle": {
-    "message": "Choisir un workflow"
   },
   "workflowDefault": {
     "message": "Envoyer tel quel"
@@ -415,7 +412,7 @@
     "message": "Consignes personnelles par workflow"
   },
   "optWorkflowNotesHint": {
-    "message": "Ajoutées à la fin du prompt envoyé à Claude, en priorité (ex. « utilise mon design system », « réponds en anglais »)."
+    "message": "Ajoutées à la fin du prompt envoyé à l'IA, en priorité. Des consignes par défaut sont proposées : adaptez-les, videz-les ou rétablissez-les."
   },
   "optWorkflowNotesPlaceholder": {
     "message": "Aucune consigne"
@@ -468,5 +465,20 @@
   },
   "optChatGPTInstructionsLabel": {
     "message": "Instructions à coller dans ChatGPT"
+  },
+  "optWorkflowNotesReset": {
+    "message": "Rétablir le texte par défaut"
+  },
+  "optWorkflowNotesTodo": {
+    "message": "À compléter :"
+  },
+  "sendMenuTitle": {
+    "message": "Choisir la destination ou le workflow"
+  },
+  "menuDestination": {
+    "message": "Envoyer vers"
+  },
+  "menuWorkflow": {
+    "message": "Workflow"
   }
 }

@@ -11,7 +11,8 @@
 import { MessageType, PipelineStep } from '../../shared/message-types.js';
 import { RouterError } from '../../shared/errors.js';
 import { Timeouts } from '../../shared/defaults.js';
-import { getProvider } from '../../providers/registry.js';
+import { getProvider, listProviders } from '../../providers/registry.js';
+import { detectTargetMention } from '../../providers/routing.js';
 import { listWorkflows, detectWorkflow } from '../../workflows/registry.js';
 import { getSettings, onSettingsChanged } from '../../services/settings.js';
 import { sendToBackground } from '../../services/messaging.js';
@@ -56,7 +57,7 @@ export function createMounter({ log }) {
     for (const { turn, messageId, prompt } of listAnswerTurns()) {
       const bar = queryFirst(SELECTORS.actionBar, { root: turn, filter: () => true })?.element;
       if (!bar || bar.querySelector(`:scope > [${BUTTON_MARKER}]`)) continue;
-      const button = createButton(messageId, detectCommands ? detectWorkflow(prompt) : null);
+      const button = createButton(messageId, prompt);
       bar.append(button.host);
       buttons.set(messageId, button);
     }
@@ -66,31 +67,58 @@ export function createMounter({ log }) {
     if (!timer) timer = setTimeout(scan, SCAN_DELAY);
   }
 
-  /** @param {import('../../workflows/registry.js').Workflow | null} detected  From "/figma …" */
-  function createButton(messageId, detected) {
+  /**
+   * The button shows what a plain click does: the destination named in the
+   * prompt ("envoie-le à Copilot") or the default one, and the workflow of
+   * its "/command". The menu offers every destination and workflow.
+   */
+  function createButton(messageId, prompt) {
+    const detected = detectCommands ? detectWorkflow(prompt) : null;
+    const mentioned = detectTargetMention(prompt)?.providerId;
+    const destination = mentioned ? getProvider(mentioned, 'target') : target;
     const workflowName = detected && (t(detected.labelKey) || detected.label);
-    const button = createSendButton({
-      label: target.name,
+    return createSendButton({
+      label: destination.name,
       badge: detected?.command ?? null,
-      title: detected ? t('sendButtonTitleWorkflow', [target.name, workflowName]) : t('sendButtonTitle', target.name),
-      menuTitle: t('workflowMenuTitle'),
-      currentWorkflowId: detected?.id ?? null,
-      workflows: listWorkflows().map((w) => ({ ...w, label: t(w.labelKey) || w.label })),
-      onSend: (workflowId) => send(messageId, workflowId),
+      title: detected
+        ? t('sendButtonTitleWorkflow', [destination.name, workflowName])
+        : t('sendButtonTitle', destination.name),
+      menuTitle: t('sendMenuTitle'),
+      sections: [
+        {
+          key: 'targetProviderId',
+          title: t('menuDestination'),
+          items: listProviders()
+            .filter((p) => p.roles.includes('target'))
+            .map((p) => ({ id: p.id, label: p.name, icon: 'bot', current: p.id === destination.id })),
+        },
+        {
+          key: 'workflowId',
+          title: t('menuWorkflow'),
+          items: listWorkflows().map((w) => ({
+            id: w.id,
+            label: t(w.labelKey) || w.label,
+            icon: w.icon,
+            hint: w.command,
+            current: w.id === detected?.id,
+          })),
+        },
+      ],
+      onSend: (choice = {}) => send(messageId, choice),
     });
-    return button;
   }
 
   // ---- Sending --------------------------------------------------------------
 
-  async function send(messageId, workflowId) {
+  /** @param {{workflowId?: string, targetProviderId?: string}} choice  From the menu; empty for a plain click. */
+  async function send(messageId, choice) {
     if (!chrome.runtime?.id) return showReloadToast();
     const button = () => buttons.get(messageId);
     button()?.setState('busy', t('stepExtracting'));
     try {
       const result = await sendToBackground(
         MessageType.ROUTE_REQUEST,
-        { messageId, workflowId, trigger: 'button' },
+        { messageId, ...choice, trigger: 'button' },
         { timeout: Timeouts.CALLER },
       );
       button()?.setState('success', t(result.sent ? 'stateSent' : 'stateInserted'));
@@ -102,7 +130,7 @@ export function createMounter({ log }) {
       showToast({
         tone: 'error',
         message: routerError.userMessage,
-        action: { label: t('toastRetry'), run: () => send(messageId, workflowId) },
+        action: { label: t('toastRetry'), run: () => send(messageId, choice) },
         closeLabel: t('toastDismiss'),
       });
     }

@@ -14,8 +14,9 @@
 import { MessageType, PipelineStep } from '../shared/message-types.js';
 import { RouterError, ErrorCode } from '../shared/errors.js';
 import { getWorkflow, resolveWorkflow } from '../workflows/registry.js';
-import { getWorkflowNotes } from '../services/workflow-notes.js';
+import { getWorkflowNotes, effectiveNotes } from '../services/workflow-notes.js';
 import { getProvider } from '../providers/registry.js';
+import { detectTargetMention } from '../providers/routing.js';
 import { DEFAULT_SETTINGS, scaleTimeouts } from '../shared/defaults.js';
 import { getSettings } from '../services/settings.js';
 import { addHistoryEntry, createEntry } from '../services/history.js';
@@ -84,13 +85,15 @@ async function execute(request, job, settings) {
     defaultWorkflowId: settings.defaultWorkflow,
     detectSlashCommands: settings.detectSlashCommands,
   });
-  const target = getProvider(request.targetProviderId ?? workflow.target ?? settings.defaultTarget, 'target');
+  // Destination: chosen in the menu > named in the message ("envoie-le à Copilot") > workflow > settings.
+  const mentioned = detectTargetMention(answer.prompt)?.providerId;
+  const target = getProvider(request.targetProviderId ?? mentioned ?? workflow.target ?? settings.defaultTarget, 'target');
   const options = { ...settings, ...workflow.options };
   Object.assign(job, { workflowId: workflow.id, targetId: target.id });
   log.info(`Job ${job.jobId}: ${sourceProviderId} → ${workflow.id} (${reason}) → ${target.id}`);
 
   notify(job, PipelineStep.TRANSFORMING);
-  const notes = (await getWorkflowNotes())[workflow.id] ?? '';
+  const notes = effectiveNotes(workflow, await getWorkflowNotes());
   const text = await workflow.transform({ text: answer.markdown, prompt: answer.prompt, notes });
   job.text = text;
 

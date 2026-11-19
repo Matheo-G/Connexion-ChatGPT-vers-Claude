@@ -187,6 +187,14 @@ Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source
 - **Accessibilité** : `tests/e2e/step8-a11y.e2e.cjs` lance axe-core (WCAG 2 A/AA) sur la popup, les réglages, le bouton, le menu et les notifications, en clair et en sombre, animations désactivées. Les couleurs claires atteignent un contraste ≥ 4,5:1 : indigo `#4a58ec`, vert `#13743a`, rouge `#b91c1c`. Le nom accessible du bouton commence par son texte visible (WCAG 2.5.3). Sans classe de thème sur la page, le thème du bouton est déduit du fond de la page.
 - **Paquet** : `scripts/package.mjs`, en Node pur et sans dépendance, produit `dist/matheo-ai-router-<version>.zip` avec uniquement le manifeste, `_locales` et `src`. `EXTENSION_DIR=<dossier> npm run test:e2e` rejoue les tests sur le paquet décompressé.
 
+## Version 1.1 : plusieurs destinations
+
+- **Destination générique** (`providers/shared/composer.js`) : `createComposerWriter` regroupe attente de l'éditeur, insertion vérifiée, envoi confirmé et détection connexion/limite. `createComposerAdapter` les relie au bus de messages, avec un diagnostic anonyme qui liste aussi les iframes. Claude et Copilot n'en sont que des configurations (`selectors.js`).
+- **Copilot** (Microsoft 365 Copilot Chat, `copilot.cloud.microsoft`) : éditeur **Lexical**, qui annule toute modification directe du DOM. Le collage simulé (stratégie 1) sélectionne d'abord tout le contenu de l'éditeur et émet `selectionchange` avant de coller, pour que Lexical remplace au lieu d'ajouter. La fixture de test utilise le vrai Lexical.
+- **Sortie du site** : après chargement, si l'onglet a quitté les adresses de l'IA (redirection vers la connexion Microsoft, adresse masquée faute de permission), on lève `TARGET_NOT_LOGGED_IN` (`target-session.js`, `assertStillOnProvider`).
+- **Destination** = choix dans le menu ▾ > IA nommée dans le message (`providers/routing.js`, alias des providers, motifs stricts « verbe d'envoi + à/dans/sur + IA » ou « … sur X » en fin de phrase) > `workflow.target` > réglage par défaut. La phrase de routage est retirée de « Ma demande initiale », et les instructions ChatGPT demandent de ne pas la reprendre.
+- **Consignes par défaut** : `defaultNotes` dans chaque workflow. Seules les versions de l'utilisateur sont stockées (`effectiveNotes`). Une chaîne vide est un choix conservé ; « Rétablir » supprime la version de l'utilisateur.
+
 ## Tests
 
 - `npm run lint` : ESLint.

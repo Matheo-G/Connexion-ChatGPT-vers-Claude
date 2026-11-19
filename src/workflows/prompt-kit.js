@@ -22,15 +22,20 @@
  */
 
 import { extractUrls } from '../utils/links.js';
+import { stripTargetMention } from '../providers/routing.js';
 
 /** Links of the user's message (see composePrompt and the default workflow). */
 export const linksOf = (prompt) => extractUrls(prompt);
 
-/** The user's message without its leading slash command ("/figma écris…" → "écris…"). */
+/**
+ * The user's message without its leading slash command and without its
+ * routing phrase: "/figma écris Hello, envoie-le à Copilot" → "écris Hello".
+ * Where the text goes is the extension's job, not something the target AI
+ * should read (it could think it has to forward it somewhere).
+ */
 export function requestOf(prompt) {
-  return String(prompt ?? '')
-    .replace(/^\s*\/[a-z0-9-]+(?=\s|$)/i, '')
-    .trim();
+  const withoutCommand = String(prompt ?? '').replace(/^\s*\/[a-z0-9-]+(?=\s|$)/i, '');
+  return stripTargetMention(withoutCommand).trim();
 }
 
 /**

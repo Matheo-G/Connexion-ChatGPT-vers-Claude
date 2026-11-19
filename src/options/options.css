@@ -140,6 +140,26 @@
   box-shadow: var(--focus-ring);
 }
 
+.notes__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.notes__reset {
+  margin-inline-end: auto;
+}
+
+.notes__todo {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+}
+
 .counter {
   align-self: flex-end;
   font-size: var(--text-xs);

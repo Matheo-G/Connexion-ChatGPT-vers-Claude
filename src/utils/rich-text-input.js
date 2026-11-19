@@ -10,7 +10,12 @@
  * most brutal, and VERIFY after each attempt (the adapter tells us how):
  *   1. paste     – synthetic ClipboardEvent: handled natively by the editor,
  *                  keeps line breaks, triggers the site's own paste logic
- *                  (e.g. Claude turns very long pastes into an attachment);
+ *                  (e.g. Claude turns very long pastes into an attachment).
+ *                  The editor content is selected first and a
+ *                  'selectionchange' is fired: editors with their own
+ *                  selection model (Lexical, used by Microsoft Copilot) then
+ *                  replace it instead of appending — and Lexical accepts
+ *                  nothing else than a paste anyway;
  *   2. execCommand('insertText') – emulates typing, whole text at once: no
  *                  'insertParagraph', which editors binding Enter to "send"
  *                  could treat as a key press and submit after line 1;
@@ -30,7 +35,7 @@ const SETTLE_DELAY = 30;
  */
 const STABILIZE_DELAY = 150;
 
-/** @type {ReadonlyArray<{name: string, run: (editor: HTMLElement, text: string) => void}>} */
+/** @type {ReadonlyArray<{name: string, run: (editor: HTMLElement, text: string) => void | Promise<void>}>} */
 const STRATEGIES = Object.freeze([
   { name: 'paste', run: pasteText },
   { name: 'execCommand', run: typeText },
@@ -50,7 +55,7 @@ export async function insertIntoEditor(getEditor, text, { isInserted, log }) {
     const editor = getEditor();
     await clearEditor(editor);
     try {
-      strategy.run(editor, text);
+      await strategy.run(editor, text);
     } catch (error) {
       log.debug(`Strategy "${strategy.name}" threw`, error);
     }
@@ -85,12 +90,25 @@ export async function clearEditor(editor) {
 
 // ---- Strategies ----------------------------------------------------------
 
-function pasteText(editor, text) {
+async function pasteText(editor, text) {
+  selectContents(editor);
+  document.dispatchEvent(new Event('selectionchange'));
+  await sleep(SETTLE_DELAY); // let the editor sync its own selection model
   const data = new DataTransfer();
   data.setData('text/plain', text);
   editor.dispatchEvent(
     new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }),
   );
+}
+
+/** Selects everything inside the editor (so a paste replaces it). */
+function selectContents(editor) {
+  editor.focus();
+  const range = document.createRange();
+  range.selectNodeContents(editor);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
 }
 
 function typeText(editor, text) {

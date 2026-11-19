@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { listWorkflows, getWorkflow, detectWorkflow, resolveWorkflow } from '../src/workflows/registry.js';
 import { composePrompt } from '../src/workflows/prompt-kit.js';
-import { sanitizeNotes, NOTES_MAX_LENGTH } from '../src/services/workflow-notes.js';
+import { sanitizeNotes, effectiveNotes, NOTES_MAX_LENGTH } from '../src/services/workflow-notes.js';
 import { iconNames } from '../src/ui-kit/icons.js';
 
 const ANSWER = '# Écran de connexion\n\n- champ email\n\n```js\nconst a = 1;\n```';
@@ -81,11 +81,24 @@ test('composePrompt: instructions first, content untouched, notes last', () => {
   assert.equal(out, `Rôle.\n\n## Règles\n- un\n- deux\n\n## Brief\n\n${ANSWER}\n\n## Consignes personnelles (prioritaires)\n\nMa consigne`);
 });
 
-test('notes are sanitised: strings only, empty dropped, length capped', () => {
+test('notes are sanitised: strings only, empty kept (a deliberate choice), length capped', () => {
   const clean = sanitizeNotes({ figma: 'ok', code: 42, mail: '   ', video: 'x'.repeat(NOTES_MAX_LENGTH + 10) });
-  assert.deepEqual(Object.keys(clean), ['figma', 'video']);
+  assert.deepEqual(Object.keys(clean), ['figma', 'mail', 'video']);
+  assert.equal(clean.mail, '');
   assert.equal(clean.video.length, NOTES_MAX_LENGTH);
   assert.deepEqual(sanitizeNotes(null), {});
+});
+
+test('default notes apply until the user edits them, even to empty', () => {
+  const figma = getWorkflow('figma');
+  assert.match(effectiveNotes(figma, {}), /Agis directement dans Figma via le connecteur MCP/);
+  assert.equal(effectiveNotes(figma, { figma: 'Ma version' }), 'Ma version');
+  assert.equal(effectiveNotes(figma, { figma: '' }), '', 'cleared on purpose');
+  assert.equal(effectiveNotes(getWorkflow('default'), {}), '', 'raw sends stay raw');
+  for (const id of ['figma', 'code', 'video', 'job', 'mail']) {
+    const notes = getWorkflow(id).defaultNotes;
+    assert.ok(notes && notes.length <= NOTES_MAX_LENGTH, `${id} has default notes within the limit`);
+  }
 });
 
 // ---- Links from the user's message ----------------------------------------
