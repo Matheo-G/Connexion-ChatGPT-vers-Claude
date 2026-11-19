@@ -1,72 +1,109 @@
 # 🚀 Mathéo AI Router
 
-Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic envoie la dernière réponse de ChatGPT vers Claude, sans copier-coller, sans API, sans coût supplémentaire.
+Extension Chrome (Manifest V3) qui transforme ChatGPT en orchestrateur : un clic envoie une réponse de ChatGPT vers Claude, sans copier-coller, sans API, sans coût supplémentaire.
 
-> **État :** V1 (étape 4). Un bouton **➤ Claude** apparaît sous chaque réponse de ChatGPT. Un clic envoie la réponse, en Markdown propre, dans une nouvelle conversation Claude. Raccourci : **Alt+Maj+C** pour la dernière réponse.
+```
+Vous → ChatGPT (prépare) → ➤ Claude (exécute : code, Figma via MCP, vidéo, mail…)
+```
 
-## Utilisation
-
-1. Discutez normalement avec ChatGPT.
-2. Sous la réponse qui vous convient, cliquez sur **➤ Claude**. Le bouton indique la progression : *Lecture… → Ouverture… → Envoi… → Envoyé*.
-3. Claude s'ouvre, ou s'active s'il était déjà ouvert, et reçoit la réponse.
-
-Raccourci clavier : **Alt+Maj+C**, depuis n'importe quel onglet. Il est modifiable dans `chrome://extensions/shortcuts`.
-
-### Workflows
-
-> **À faire une fois :** dans les réglages de l'extension, section **Configurer ChatGPT**, copiez les instructions et collez-les dans ChatGPT (Paramètres → Personnalisation → Instructions personnalisées). Sans elles, ChatGPT ne sait pas que `/figma` signifie « prépare un brief pour Claude ».
-
-Commencez votre message à ChatGPT par une commande, et la réponse partira vers Claude avec les bonnes instructions. Le bouton affiche alors un badge, par exemple **➤ Claude `/figma`**.
-
-| Commande | Ce que fait Claude |
-|---|---|
-| `/figma` | Crée le design dans Figma (connecteur Figma MCP) ou une spécification détaillée |
-| `/code` | Développe, avec fichiers complets et tests |
-| `/video` | Découpe en plans avec des prompts Higgsfield |
-| `/job` | Prépare une candidature (analyse, lettre, entretien) |
-| `/mail` | Rédige un e-mail prêt à envoyer |
-
-**Votre demande d'origine et ses liens** (par exemple un lien Figma) sont toujours transmis à Claude, en plus de la réponse de ChatGPT. Avec `/figma`, Claude travaille directement dans le fichier indiqué.
-
-La flèche **▾** du bouton permet de choisir un autre workflow pour une réponse. Dans les réglages, vous pouvez ajouter vos **consignes personnelles** à chaque workflow. Pour créer un nouveau workflow, voir [docs/ADD_A_WORKFLOW.md](docs/ADD_A_WORKFLOW.md).
-
-La **popup** (icône de l'extension) propose aussi l'envoi de la dernière réponse en un clic, l'état des connexions et vos derniers envois. Les **réglages** (roue dentée) permettent de choisir :
-- nouvelle conversation ou conversation existante ;
-- envoi automatique ou simple insertion ;
-- retour sur ChatGPT après l'envoi ;
-- le thème ;
-- l'historique ;
-- le mode debug.
-
-## Installation (mode développeur)
+## Installation
 
 Aucun build, aucun droit administrateur.
 
-1. Ouvrir `chrome://extensions`
-2. Activer **Mode développeur** (en haut à droite)
-3. **Charger l'extension non empaquetée** → sélectionner ce dossier (celui qui contient `manifest.json`)
-4. Épingler l'icône « Mathéo AI Router » dans la barre d'outils
+1. Récupérer le dossier du projet (ou décompresser `dist/matheo-ai-router-<version>.zip`).
+2. Ouvrir `chrome://extensions` et activer le **Mode développeur** (en haut à droite).
+3. **Charger l'extension non empaquetée** → sélectionner le dossier qui contient `manifest.json`.
+4. Épingler l'icône « Mathéo AI Router » dans la barre d'outils.
 
-Après une modification du code : bouton ⟳ sur la carte de l'extension. Les onglets ChatGPT et Claude déjà ouverts reçoivent automatiquement la nouvelle version : inutile de les recharger.
+La page de réglages s'ouvre alors toute seule. **Faites l'étape « Configurer ChatGPT »** (voir ci-dessous) : sans elle, ChatGPT ne comprend pas les commandes `/figma`, `/code`…
 
-## Développement (optionnel)
+## Configurer ChatGPT (une seule fois)
 
-Node ≥ 20 n'est utile que pour les tests et les outils, pas pour utiliser l'extension.
+Dans les réglages de l'extension, première section :
 
-```bash
-npm install       # dépendances de développement (tests e2e uniquement)
-npm test          # tests unitaires (node:test, aucune dépendance)
-npm run test:e2e  # tests de bout en bout dans Chromium (nécessite Playwright)
-npm run icons     # régénère les icônes PNG (nécessite Playwright)
-```
+1. **Copier les instructions**.
+2. Dans ChatGPT : **Paramètres → Personnalisation → Instructions personnalisées**, champ sur la façon dont ChatGPT doit répondre. On peut aussi utiliser les instructions d'un Projet ChatGPT.
+3. Coller, enregistrer, démarrer une nouvelle conversation.
 
-Logs détaillés : activer le **Mode debug** dans les réglages, puis ouvrir la console du service worker (`chrome://extensions` → « service worker ») ou celle de la page.
+ChatGPT sait alors que `/figma …` signifie « rédige un brief pour Claude », au lieu de tenter la tâche lui-même.
 
-## Documentation
+## Utilisation
 
-- [Architecture](docs/ARCHITECTURE.md) — principes, rôle de chaque dossier, conventions, feuille de route
-- [Ajouter un workflow](docs/ADD_A_WORKFLOW.md) — un fichier et deux lignes
+1. Discutez avec ChatGPT, avec ou sans commande (`/figma`, `/code`…).
+2. Sous la réponse voulue, cliquez sur **➤ Claude**. Le bouton suit la progression : *Lecture… → Ouverture… → Envoi… → Envoyé*.
+3. Claude s'ouvre, ou s'active s'il était déjà ouvert, et reçoit la réponse en Markdown propre : code, tableaux, listes, formules.
+
+| Raccourci | Effet |
+|---|---|
+| **Alt+Maj+C** | Envoie la dernière réponse de ChatGPT, depuis n'importe quel onglet. Modifiable dans `chrome://extensions/shortcuts`. |
+
+### Workflows
+
+Commencez votre message à ChatGPT par une commande. Le bouton affiche alors un badge (**➤ Claude `/figma`**), et Claude reçoit des instructions adaptées.
+
+| Commande | Ce que fait Claude |
+|---|---|
+| *(aucune)* | Reçoit la réponse telle quelle |
+| `/figma` | Crée le design dans Figma (connecteur Figma MCP) ou une spécification détaillée. **Un lien Figma devient le fichier de travail.** |
+| `/code` | Développe, avec fichiers complets, gestion des erreurs et tests |
+| `/video` | Découpe en plans, avec des prompts Higgsfield en anglais |
+| `/job` | Prépare une candidature : analyse, mots-clés, lettre, entretien, sans rien inventer |
+| `/mail` | Rédige un e-mail prêt à envoyer, en deux versions |
+
+- **Votre demande d'origine et ses liens** sont toujours transmis à Claude, en plus de la réponse de ChatGPT, et c'est votre demande qui prime.
+- La flèche **▾** du bouton permet de choisir un autre workflow pour une réponse.
+- Réglages → **Consignes personnelles par workflow** : par exemple « utilise mon design system ».
+
+### Popup et réglages
+
+- **Popup** : envoi de la dernière réponse, état des connexions, 5 derniers envois, outils de diagnostic.
+- **Réglages** :
+  - nouvelle conversation ou conversation existante ;
+  - envoi automatique ou simple insertion ;
+  - retour sur ChatGPT ;
+  - workflow par défaut et détection des commandes ;
+  - thème ;
+  - historique ;
+  - patience (connexion lente) ;
+  - mode debug.
+
+## En cas de problème
+
+| Symptôme | Que faire |
+|---|---|
+| Pas de bouton sous les réponses | Popup → Connexions. Si « Page non reconnue » : *Outils de diagnostic → Copier le diagnostic ChatGPT* et l'envoyer (le diagnostic ne contient aucun texte de conversation). |
+| « Vous n'êtes pas connecté » | Se connecter à claude.ai dans ce navigateur. |
+| Connexions « Indisponible » | `chrome://extensions` → ⟳ sur l'extension, puis bouton **Erreurs** si besoin. Le message technique s'affiche dans la popup. |
+| ChatGPT répond « je ne peux pas » à `/figma` | Faire l'étape **Configurer ChatGPT**. |
+| Connexion lente, délais dépassés | Réglages → Avancé → Patience : **Connexion lente**. |
+
+Après une mise à jour de l'extension (⟳), les onglets ChatGPT et Claude ouverts reçoivent la nouvelle version automatiquement.
 
 ## Confidentialité
 
-Tout reste dans le navigateur : aucune donnée n'est envoyée ailleurs que vers les sites d'IA que vous utilisez déjà.
+Aucune API ni aucun serveur. Les réponses vont de votre onglet ChatGPT à votre onglet Claude, dans votre navigateur et avec vos comptes. Seuls les réglages et un historique local (aperçu de 140 caractères, désactivable) sont conservés. Détails : [docs/STORE.md](docs/STORE.md#confidentialité-déclaration-et-politique).
+
+## Développement
+
+Node ≥ 20 sert uniquement aux tests et aux outils, pas à l'utilisation.
+
+```bash
+npm install          # dépendances de développement
+npm run lint         # ESLint
+npm test             # tests unitaires (node:test)
+npm run test:e2e     # bout en bout dans Chromium (Playwright) : fixtures fidèles au DOM réel, accessibilité axe-core
+npm run package      # dist/matheo-ai-router-<version>.zip, prêt pour le Chrome Web Store
+npm run icons        # régénère les icônes PNG
+```
+
+Pour tester le paquet lui-même : `EXTENSION_DIR=<dossier décompressé> npm run test:e2e`.
+
+Logs détaillés : Réglages → **Mode debug**, puis console du service worker (`chrome://extensions` → « service worker ») ou console de la page.
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) : principes, rôle de chaque dossier, conventions, choix techniques étape par étape
+- [Ajouter un workflow](docs/ADD_A_WORKFLOW.md) : un fichier et deux lignes
+- [Ajouter une IA](docs/ADD_A_PROVIDER.md) : Gemini, Grok…
+- [Publier sur le Chrome Web Store](docs/STORE.md) : fiche, permissions, confidentialité
+- [Journal des versions](CHANGELOG.md)

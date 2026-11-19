@@ -45,17 +45,30 @@ function renderedMatches(selectors, root = document) {
   return [];
 }
 
-/** Drops elements nested in another match, then duplicates sharing an id. */
-function uniqueBlocks(elements, idAttribute) {
+/**
+ * Drops elements nested in another match, then duplicates sharing an id.
+ * @param {Element[]} elements
+ * @param {(el: Element) => string | null} [idOf]
+ */
+function uniqueBlocks(elements, idOf = () => null) {
   const outer = elements.filter((el) => !elements.some((o) => o !== el && o.contains(el)));
   const seen = new Set();
   return outer.filter((el) => {
-    const id = el.getAttribute(idAttribute);
+    const id = idOf(el);
     if (!id) return true;
     if (seen.has(id)) return false;
     seen.add(id);
     return true;
   });
+}
+
+/** The answer's id: first non-empty id attribute of the layout, or null. */
+export function replyId(reply, layout) {
+  for (const attribute of layout.replyIdAttributes) {
+    const value = reply.getAttribute(attribute)?.trim();
+    if (value) return value;
+  }
+  return null;
 }
 
 const precedes = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
@@ -68,7 +81,7 @@ const precedes = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_
  */
 function detectLayout() {
   for (const layout of LAYOUTS) {
-    const replies = uniqueBlocks(renderedMatches(layout.reply), layout.replyIdAttribute);
+    const replies = uniqueBlocks(renderedMatches(layout.reply), (el) => replyId(el, layout));
     if (replies.length) return { layout, replies };
   }
   return null;
@@ -112,14 +125,14 @@ function answerBlocksOf(reply, { layout, replies }) {
 }
 
 function findById(messageId, found) {
-  const reply = found?.replies.find((r) => r.getAttribute(found.layout.replyIdAttribute) === messageId);
+  const reply = found?.replies.find((r) => replyId(r, found.layout) === messageId);
   if (!reply) throw new RouterError(ErrorCode.NO_CONTENT, `Message ${messageId} not found`);
   return reply;
 }
 
 /** Last user prompt located before `reply` in the page. */
 function promptFor(reply, layout) {
-  const prompts = uniqueBlocks(renderedMatches(layout.prompt), '').filter((p) => precedes(p, reply));
+  const prompts = uniqueBlocks(renderedMatches(layout.prompt)).filter((p) => precedes(p, reply));
   const bubble = prompts.at(-1);
   return bubble ? promptText(bubble) : '';
 }
@@ -158,14 +171,13 @@ export function listAnswerTurns() {
   for (const reply of found.replies) {
     const turn = reply.closest(found.layout.turn) ?? reply;
     const entry = byTurn.get(turn) ?? { first: reply };
-    entry.messageId = reply.getAttribute(found.layout.replyIdAttribute); // last one wins
+    entry.messageId = replyId(reply, found.layout); // last one wins
     byTurn.set(turn, entry);
   }
-  return [...byTurn].map(([turn, { first, messageId }]) => ({
-    turn,
-    messageId,
-    prompt: promptFor(first, found.layout),
-  }));
+  // Without an id, a button could only ever send the LATEST answer: no button then.
+  return [...byTurn]
+    .filter(([, { messageId }]) => messageId)
+    .map(([turn, { first, messageId }]) => ({ turn, messageId, prompt: promptFor(first, found.layout) }));
 }
 
 // ---- Public API ---------------------------------------------------------------
@@ -191,7 +203,10 @@ export function extract({ messageId } = {}) {
   // "latest" one found could be the previous answer. Never guess — refuse,
   // unless a specific older answer was explicitly requested.
   const reply = messageId ? findById(messageId, found) : found.replies.at(-1);
-  const isLatest = reply.closest(found.layout.turn) === found.replies.at(-1).closest(found.layout.turn);
+  const latest = found.replies.at(-1);
+  // Same exchange as the latest answer (compare the answers themselves when there is no turn container).
+  const turnOf = (el) => el.closest(found.layout.turn) ?? el;
+  const isLatest = turnOf(reply) === turnOf(latest);
   if ((!messageId || isLatest) && isGenerating()) {
     throw new RouterError(ErrorCode.STILL_GENERATING, 'Answer still streaming');
   }
@@ -206,7 +221,7 @@ export function extract({ messageId } = {}) {
   return {
     markdown,
     prompt: promptFor(blocks[0], found.layout),
-    messageId: blocks.at(-1).getAttribute(found.layout.replyIdAttribute),
+    messageId: replyId(blocks.at(-1), found.layout),
     length: markdown.length,
     layout: found.layout.name,
   };

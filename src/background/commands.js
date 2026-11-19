@@ -13,7 +13,7 @@ import { runPipeline } from './pipeline.js';
 
 const log = createLogger('commands');
 
-export const Command = Object.freeze({
+const Command = Object.freeze({
   SEND_LATEST_ANSWER: 'send-latest-answer',
 });
 

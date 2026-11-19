@@ -12,17 +12,21 @@
 import { RouterError, ErrorCode } from '../../shared/errors.js';
 import { Timeouts } from '../../shared/defaults.js';
 import { queryFirst, waitForElement, waitForCondition, isEnabled } from '../../utils/dom.js';
-import { insertIntoEditor } from '../../utils/rich-text-input.js';
+import { insertIntoEditor, clearEditor } from '../../utils/rich-text-input.js';
 import { normalizeText, fingerprint, hasText } from '../../utils/text.js';
 import { SELECTORS, AUTH_PATHS, RATE_LIMIT_PATTERNS } from './selectors.js';
 
 const SEND_BUTTON_WAIT = 5_000;
+/** An email field seen before the editor may be a banner, not the login page. */
+const LOGIN_GRACE = 3_000;
 const SENT_CONFIRM_WAIT = 4_000;
 
 // ---- Page state ---------------------------------------------------------
 
-export function isAuthPage() {
-  if (AUTH_PATHS.some((path) => location.pathname.startsWith(path))) return true;
+const onAuthPath = () => AUTH_PATHS.some((path) => location.pathname.startsWith(path));
+
+function isAuthPage() {
+  if (onAuthPath()) return true;
   return !findEditor() && Boolean(queryFirst(SELECTORS.loginForm));
 }
 
@@ -36,7 +40,7 @@ function findComposer(editor) {
 }
 
 /** Send button, looked up inside the composer first to avoid look-alikes. */
-export function findSendButton() {
+function findSendButton() {
   const composer = findComposer(findEditor());
   const inComposer = composer && queryFirst(SELECTORS.sendButton, { root: composer });
   return /** @type {HTMLButtonElement} */ ((inComposer || queryFirst(SELECTORS.sendButton))?.element ?? null);
@@ -55,26 +59,39 @@ function isRateLimited() {
 // ---- Steps --------------------------------------------------------------
 
 async function waitForEditor(timeout = Timeouts.ELEMENT) {
-  if (isAuthPage()) throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, location.pathname);
+  // Only the URL is conclusive here; a login-looking field gets a grace period below.
+  if (onAuthPath()) throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, location.pathname);
 
   const { selector } = await waitForElement([...SELECTORS.editor, ...SELECTORS.loginForm], {
     timeout,
     code: ErrorCode.EDITOR_NOT_FOUND,
   });
   if (SELECTORS.loginForm.includes(selector)) {
-    throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, 'Login form displayed');
+    // Outside the auth pages, give the editor a moment: the field may be a banner or dialog.
+    const editor = await waitForElement(SELECTORS.editor, { timeout: LOGIN_GRACE }).catch(() => null);
+    if (!editor) throw new RouterError(ErrorCode.TARGET_NOT_LOGGED_IN, 'Login form displayed');
   }
 }
 
 /**
  * Inserted = our text is visible in the editor, OR Claude converted the paste
  * into an attachment (editor stays empty but the send button turns on).
+ * The attachment signal is ignored when the composer already held an
+ * attachment before insertion (`staleAttachment`): it would prove nothing.
  */
-function isInserted(text) {
+function isInserted(text, { staleAttachment }) {
   const probe = fingerprint(text);
   return () =>
     fingerprint(editorText(), Infinity).includes(probe) ||
-    (!hasText(editorText()) && isEnabled(findSendButton()));
+    (!staleAttachment && !hasText(editorText()) && isEnabled(findSendButton()));
+}
+
+/** Empty composer whose send button is on: something (an attachment) is already there. */
+async function detectStaleAttachment(log) {
+  await clearEditor(findEditor());
+  const stale = !hasText(editorText()) && isEnabled(findSendButton());
+  if (stale) log.warn('The composer already holds an attachment: it will be sent along');
+  return stale;
 }
 
 async function send(log) {
@@ -135,7 +152,8 @@ export async function submit({ text, autoSend = true, elementTimeout }, { log })
   if (!hasText(text)) throw new RouterError(ErrorCode.NO_CONTENT, 'Empty text');
 
   await waitForEditor(elementTimeout);
-  const insertedWith = await insertIntoEditor(findEditor, text, { isInserted: isInserted(text), log });
+  const staleAttachment = await detectStaleAttachment(log);
+  const insertedWith = await insertIntoEditor(findEditor, text, { isInserted: isInserted(text, { staleAttachment }), log });
   log.info(`Text inserted (${insertedWith}, ${normalizeText(text).length} chars)`);
 
   if (!autoSend) return { insertedWith, sent: false, url: location.href };

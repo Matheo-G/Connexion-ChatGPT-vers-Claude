@@ -11,7 +11,9 @@
  *   1. paste     – synthetic ClipboardEvent: handled natively by the editor,
  *                  keeps line breaks, triggers the site's own paste logic
  *                  (e.g. Claude turns very long pastes into an attachment);
- *   2. execCommand('insertText' / 'insertParagraph') – emulates typing;
+ *   2. execCommand('insertText') – emulates typing, whole text at once: no
+ *                  'insertParagraph', which editors binding Enter to "send"
+ *                  could treat as a key press and submit after line 1;
  *   3. dom       – rewrites the paragraphs + "input" event; the editor's
  *                  MutationObserver picks the change up.
  */
@@ -93,10 +95,7 @@ function pasteText(editor, text) {
 
 function typeText(editor, text) {
   focusAtEnd(editor);
-  text.split(/\r?\n/).forEach((line, index) => {
-    if (index > 0) document.execCommand('insertParagraph');
-    if (line) document.execCommand('insertText', false, line);
-  });
+  document.execCommand('insertText', false, text);
 }
 
 function writeParagraphs(editor, text) {

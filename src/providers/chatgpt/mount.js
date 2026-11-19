@@ -31,7 +31,6 @@ const STEP_LABELS = {
   [PipelineStep.EXTRACTING]: 'stepExtracting',
   [PipelineStep.TRANSFORMING]: 'stepTransforming',
   [PipelineStep.OPENING_TARGET]: 'stepOpening',
-  [PipelineStep.WAITING_TARGET]: 'stepWaiting',
   [PipelineStep.SUBMITTING]: 'stepSubmitting',
 };
 
@@ -142,8 +141,9 @@ export function createMounter({ log }) {
     const settings = await getSettings().catch(() => null);
     if (settings) applySettings(settings);
     unsubscribe = onSettingsChanged((next) => {
+      const relevant = next.defaultTarget !== target.id || next.detectSlashCommands !== detectCommands;
       applySettings(next);
-      remountAll(); // labels and badges depend on settings
+      if (relevant) remountAll(); // labels and badges depend on these two only
     });
     observer = new MutationObserver(scheduleScan);
     observer.observe(document.body, { childList: true, subtree: true });

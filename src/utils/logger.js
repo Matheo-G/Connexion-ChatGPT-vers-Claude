@@ -53,10 +53,6 @@ export function setDebug(enabled) {
   debugEnabled = Boolean(enabled);
 }
 
-export function isDebugEnabled() {
-  return debugEnabled;
-}
-
 /**
  * @param {string} scope  Module name shown in every line.
  * @returns {{debug: Function, info: Function, warn: Function, error: Function, time: Function}}

@@ -6,10 +6,22 @@
  */
 
 import { DEFAULT_SETTINGS, SETTING_CHOICES, StorageKey } from '../shared/defaults.js';
+import { listProviders } from '../providers/registry.js';
+import { listWorkflows } from '../workflows/registry.js';
+
+/**
+ * Settings whose value must be an id known to a registry: a value from a
+ * removed workflow or a source-only AI would otherwise break every send.
+ */
+const REGISTRY_CHOICES = {
+  defaultTarget: () => listProviders().filter((p) => p.roles.includes('target')).map((p) => p.id),
+  defaultWorkflow: () => listWorkflows().map((w) => w.id),
+};
 
 /**
  * Keeps only known keys whose value has the default's type (and an allowed
- * value for enumerated settings); everything else falls back to the default.
+ * value for enumerated settings or registry ids); everything else falls back
+ * to the default.
  * @param {unknown} raw
  * @returns {import('../shared/defaults.js').Settings}
  */
@@ -20,6 +32,7 @@ export function sanitizeSettings(raw) {
     const value = source[key];
     if (typeof value !== typeof fallback) continue;
     if (SETTING_CHOICES[key] && !SETTING_CHOICES[key].includes(value)) continue;
+    if (REGISTRY_CHOICES[key] && !REGISTRY_CHOICES[key]().includes(value)) continue;
     clean[key] = value;
   }
   return clean;

@@ -39,21 +39,22 @@
   --duration-base: 180ms;
   --duration-slow: 280ms;
 
-  /* Light palette (slate + indigo accent) */
+  /* Light palette (slate + indigo accent). Every text/background pair meets
+     WCAG AA (4.5:1), including accent text on its 10 % tint (audited with axe-core). */
   --color-bg: #ffffff;
   --color-surface: #f6f7f9;
   --color-surface-hover: #eef0f3;
   --color-border: #e3e6eb;
   --color-text: #15171c;
   --color-text-muted: #5d6573;
-  --color-accent: #5b6cff;
-  --color-accent-hover: #4a5af0;
+  --color-accent: #4a58ec;
+  --color-accent-hover: #3f4dd9;
   --color-accent-contrast: #ffffff;
-  --color-success: #17a34a;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  --color-success: #13743a;
+  --color-warning: #b45309;
+  --color-danger: #b91c1c;
   --shadow-md: 0 4px 16px rgb(15 23 42 / 0.08), 0 1px 3px rgb(15 23 42 / 0.06);
-  --focus-ring: 0 0 0 3px rgb(91 108 255 / 0.35);
+  --focus-ring: 0 0 0 3px rgb(74 88 236 / 0.4);
 
   color-scheme: light;
 }

@@ -33,7 +33,7 @@ export async function pingTab(tabId) {
 }
 
 /** @param {number} tabId */
-export async function injectContentScript(tabId) {
+async function injectContentScript(tabId) {
   try {
     await chrome.scripting.executeScript({ target: { tabId }, files: [LOADER_FILE] });
     log.info('Content script injected', { tabId });

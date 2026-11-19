@@ -188,3 +188,12 @@ test('popup quick send: latest ChatGPT answer → Claude', async () => {
   const claude = h.pagesOf('claude.ai')[0];
   await claude.waitForFunction(() => window.__sent?.length === 1);
 });
+
+test('popup quick send says "inserted" when auto send is off', async () => {
+  await h.evalSW(() => chrome.storage.sync.set({ settings: { autoSend: false, detectSlashCommands: false } }));
+  await openChatGPT();
+  const popup = await h.openPopup();
+  await popup.click('#quick-send');
+  await popup.locator('#feedback[data-tone="success"]').waitFor({ timeout: 30_000 });
+  assert.match(await popup.textContent('#feedback'), /insérée dans Claude \(non envoyée\)/);
+});

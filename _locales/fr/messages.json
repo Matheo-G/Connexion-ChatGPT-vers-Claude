@@ -10,9 +10,6 @@
   "popupSubtitle": {
     "message": "Orchestrateur d'IA"
   },
-  "optionsTitle": {
-    "message": "Réglages"
-  },
   "versionLabel": {
     "message": "Version $VERSION$",
     "placeholders": {
@@ -23,9 +20,6 @@
   },
   "popupConnections": {
     "message": "Connexions"
-  },
-  "popupDiagnostics": {
-    "message": "Diagnostic"
   },
   "stateReady": {
     "message": "Connecté"
@@ -184,9 +178,6 @@
   },
   "stepOpening": {
     "message": "Ouverture…"
-  },
-  "stepWaiting": {
-    "message": "Chargement…"
   },
   "stepSubmitting": {
     "message": "Envoi…"
@@ -474,5 +465,8 @@
   },
   "statusUnavailableHint": {
     "message": "Le cœur de l'extension ne répond pas. Réessayez ; si ça persiste, ouvrez chrome://extensions, cliquez ⟳ sur Mathéo AI Router et regardez le bouton « Erreurs ». Message technique :"
+  },
+  "optChatGPTInstructionsLabel": {
+    "message": "Instructions à coller dans ChatGPT"
   }
 }

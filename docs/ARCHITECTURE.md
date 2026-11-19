@@ -173,9 +173,24 @@ Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source
 
 **Consignes personnelles** par workflow : saisies dans les réglages, stockées dans `chrome.storage.local` (`services/workflow-notes.js`, 2 000 caractères maximum chacune), ajoutées en fin de prompt.
 
+## Finitions (étape 8)
+
+- **Qualité** : ESLint strict (`eslint.config.js`, `npm run lint`) sur tout le code. Code mort retiré. Les fonctions internes ne sont plus exportées.
+- **Revue de code** : 10 constats corrigés, ou documentés quand ils ne pouvaient pas l'être (voir [CHANGELOG](../CHANGELOG.md)), chacun couvert par un test de non-régression :
+  - les identifiants des réglages sont validés contre les registres ;
+  - `Timeouts.CALLER` couvre le pire cas ;
+  - un second verrou porte sur la réponse réellement lue ;
+  - les identifiants de secours des réponses ChatGPT sont pris en compte ;
+  - le repli `execCommand` insère d'un seul bloc ;
+  - un délai de grâce précède la conclusion « non connecté » ;
+  - une pièce jointe déjà présente ne simule plus une insertion réussie.
+- **Accessibilité** : `tests/e2e/step8-a11y.e2e.cjs` lance axe-core (WCAG 2 A/AA) sur la popup, les réglages, le bouton, le menu et les notifications, en clair et en sombre, animations désactivées. Les couleurs claires atteignent un contraste ≥ 4,5:1 : indigo `#4a58ec`, vert `#13743a`, rouge `#b91c1c`. Le nom accessible du bouton commence par son texte visible (WCAG 2.5.3). Sans classe de thème sur la page, le thème du bouton est déduit du fond de la page.
+- **Paquet** : `scripts/package.mjs`, en Node pur et sans dépendance, produit `dist/matheo-ai-router-<version>.zip` avec uniquement le manifeste, `_locales` et `src`. `EXTENSION_DIR=<dossier> npm run test:e2e` rejoue les tests sur le paquet décompressé.
+
 ## Tests
 
-- `npm test` : tests unitaires des modules purs (`node:test`, aucune dépendance).
+- `npm run lint` : ESLint.
+- `npm test` : tests unitaires des modules purs (`node:test`).
 - `npm run test:e2e` : Chromium avec l'extension chargée. claude.ai et chatgpt.com sont servis par un serveur HTTPS local (`--host-resolver-rules`), donc pas de réseau ni de compte. La fixture Claude utilise un **vrai éditeur Tiptap/ProseMirror** et simule le chargement lent, la déconnexion, la limite d'usage, un collage ignoré, un bouton cassé… La fixture ChatGPT reproduit la structure de chatgpt.com : tours, en-tête de code, KaTeX, streaming, réponse découpée. Nécessite Playwright, et `npm install` pour les dépendances de développement (Tiptap, esbuild, linkedom).
 
 ## Flux V1 (cible)
@@ -206,4 +221,4 @@ Un workflow est un fichier de `src/workflows/`. Il transforme la réponse source
 | 5 | Popup + options | ✅ |
 | 6 | Robustesse et cas limites | ✅ |
 | 7 | Moteur de workflows | ✅ |
-| 8 | Finitions + docs d'extension | ⏳ |
+| 8 | Finitions : revue de code, accessibilité, paquet, documentation | ✅ |

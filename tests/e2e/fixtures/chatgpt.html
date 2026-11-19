@@ -20,6 +20,7 @@
                (omit streamMs to stream forever)
     stopButton false: (turn-key) no stop button, only the turn state says "streaming"
     prompt     (turn-key) HTML of the user's second message (default: "/figma Crée…")
+    noSelectionId  (turn-key) answers without data-chatgpt-selection-message-id
     split      the last turn holds two assistant messages (around a tool call)
 -->
 <html lang="fr">
@@ -123,7 +124,7 @@ frame.layoutMode = <span>"VERTICAL"</span>;</code></pre></div></div><button aria
         item.dataset.turnKey = key;
         const unit = `fallback-turn-${key}`;
         const reply = replyId
-          ? `<div data-response-body="${replyId}"><div data-chatgpt-selection-message-id="${replyId}" class="group flex min-w-0 flex-col">` +
+          ? `<div data-response-body="${replyId}"><div ${cfg.noSelectionId ? '' : `data-chatgpt-selection-message-id="${replyId}"`} class="group flex min-w-0 flex-col">` +
             `<div data-markdown-text-style="assistant-message">${replyHtml}</div></div></div>`
           : `<div class="streaming-reply"><div data-markdown-text-style="assistant-message">${replyHtml}</div></div>`;
         item.innerHTML =

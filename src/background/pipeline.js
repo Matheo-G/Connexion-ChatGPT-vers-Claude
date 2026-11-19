@@ -50,7 +50,7 @@ export async function runPipeline(request = {}) {
   if (running.has(key)) throw new RouterError(ErrorCode.BUSY, `Job already running for ${key}`);
 
   running.add(key);
-  const job = { jobId: createRequestId(), messageId, trigger, tabId: request.sourceTabId, sourceProviderId };
+  const job = { jobId: createRequestId(), messageId, trigger, tabId: request.sourceTabId, sourceProviderId, locks: [key] };
   let settings = { ...DEFAULT_SETTINGS };
   try {
     settings = await getSettings();
@@ -64,7 +64,7 @@ export async function runPipeline(request = {}) {
     log.warn(`Job ${job.jobId} failed`, routerError.code, routerError.message);
     throw routerError;
   } finally {
-    running.delete(key);
+    job.locks.forEach((lock) => running.delete(lock));
   }
 }
 
@@ -75,6 +75,7 @@ async function execute(request, job, settings) {
   notify(job, PipelineStep.EXTRACTING);
   const answer = await readSource(sourceProviderId, { tabId: job.tabId, messageId: job.messageId });
   job.tabId = answer.tabId;
+  lockAnswer(job, `${answer.tabId}:${answer.messageId ?? 'latest'}`);
 
   // The workflow can depend on the user's message ("/figma …"): resolve it now.
   const { workflow, reason } = resolveWorkflow({
@@ -105,6 +106,18 @@ async function execute(request, job, settings) {
   if (options.returnToSource) await returnTo(answer.tabId);
   notify(job, PipelineStep.DONE, { targetName: target.name, sent: delivery.sent });
   return { jobId: job.jobId, workflowId: workflow.id, workflowReason: reason, targetId: target.id, ...delivery };
+}
+
+/**
+ * Second lock, on the answer actually read: a shortcut or popup request
+ * ("auto:latest") and a button click ("<tab>:<id>") on the same answer
+ * would otherwise both pass the first check and send it twice.
+ */
+function lockAnswer(job, key) {
+  if (job.locks.includes(key)) return;
+  if (running.has(key)) throw new RouterError(ErrorCode.BUSY, `Answer already being sent (${key})`);
+  running.add(key);
+  job.locks.push(key);
 }
 
 /** Local history (if enabled) — a short preview only, see services/history.js. */

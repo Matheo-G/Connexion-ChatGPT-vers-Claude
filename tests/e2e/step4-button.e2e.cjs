@@ -185,3 +185,22 @@ test('keyboard shortcut sends the latest answer; failures are toasted', async ()
   await toast.waitFor();
   assert.match(await toast.textContent(), /encore en train de répondre/);
 });
+
+test('button and shortcut on the same answer at once → sent only once', async () => {
+  const page = await openChatGPT();
+  const shortcut = h.evalSW(async () => {
+    const [tab] = await chrome.tabs.query({ url: 'https://chatgpt.com/*' });
+    return aiRouter.handleCommand('send-latest-answer', tab);
+  });
+  await clickSend(page);
+  await shortcut;
+  await claudeMessages();
+  await new Promise((r) => setTimeout(r, 1500));
+  assert.equal((await h.pagesOf('claude.ai')[0].evaluate(() => window.__sent)).length, 1);
+});
+
+test('answers without selection id still get working buttons for THEIR answer', async () => {
+  const page = await openChatGPT({ layout: 'turn-key', noSelectionId: true });
+  await clickSend(page, 0);
+  assert.deepEqual(await claudeMessages(), ['Première réponse.']);
+});

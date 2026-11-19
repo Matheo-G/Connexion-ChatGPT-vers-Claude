@@ -15,7 +15,7 @@ const GLYPHS = { success: 'check', error: 'alert', info: 'refresh' };
  * @param {'info' | 'success' | 'error'} tone
  * @param {string} message
  */
-export function showFeedback(el, tone, message) {
+function showFeedback(el, tone, message) {
   el.dataset.tone = tone;
   el.innerHTML = icon(GLYPHS[tone], { size: 16 });
   el.append(message);

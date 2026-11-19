@@ -56,3 +56,20 @@ test('formatRelative speaks French', () => {
   assert.equal(formatRelative(now - 2 * 3600_000, { now }), 'il y a 2 heures');
   assert.equal(formatRelative(now - 26 * 3600_000, { now }), 'hier');
 });
+
+// ---- Code review regressions (step 8) ---------------------------------------
+
+import { Timeouts, scaleTimeouts } from '../src/shared/defaults.js';
+
+test('sanitizeSettings rejects unknown or source-only ids', () => {
+  assert.equal(sanitizeSettings({ defaultTarget: 'chatgpt' }).defaultTarget, 'claude', 'source-only AI');
+  assert.equal(sanitizeSettings({ defaultTarget: 'gemini' }).defaultTarget, 'claude', 'unknown AI');
+  assert.equal(sanitizeSettings({ defaultWorkflow: 'linkedin' }).defaultWorkflow, 'default', 'removed workflow');
+  assert.equal(sanitizeSettings({ defaultWorkflow: 'figma' }).defaultWorkflow, 'figma');
+});
+
+test('UIs wait longer than the slowest possible delivery (patient × automatic retry)', () => {
+  const t = scaleTimeouts('patient');
+  const worstDelivery = 2 * (t.TAB_LOAD + t.CONTENT_READY + t.SUBMIT);
+  assert.ok(Timeouts.CALLER > worstDelivery + Timeouts.MESSAGE, `${Timeouts.CALLER} <= ${worstDelivery}`);
+});

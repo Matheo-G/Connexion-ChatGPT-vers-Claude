@@ -34,8 +34,6 @@ export const MessageType = Object.freeze({
   TARGET_SUBMIT: 'target/submit',
   /** background → content (any): anonymous DOM skeleton for troubleshooting */
   PROVIDER_DIAGNOSE: 'provider/diagnose',
-  /** background → content (target): report login / quota / editor state */
-  TARGET_HEALTH: 'target/health',
 
   // --- UI / diagnostics -------------------------------------------------
   /** popup → background: open or focus a target without sending (debug) */
@@ -53,7 +51,6 @@ export const PipelineStep = Object.freeze({
   EXTRACTING: 'extracting',
   TRANSFORMING: 'transforming',
   OPENING_TARGET: 'opening-target',
-  WAITING_TARGET: 'waiting-target',
   SUBMITTING: 'submitting',
   DONE: 'done',
   FAILED: 'failed',

@@ -158,3 +158,16 @@ test('popup "insert test text" fills Claude without sending', async () => {
   assert.deepEqual(await sentMessages(), []);
   await popup.close();
 });
+
+test('an email field before the editor is not mistaken for the login page', async () => {
+  h.control.fixture = { emailBanner: true, mountDelay: 1500 };
+  const data = assertOk(await deliver('Toujours connecté'));
+  assert.equal(data.sent, true);
+});
+
+test('an attachment left in the composer cannot fake a successful insertion', async () => {
+  h.control.fixture = { staleAttachment: true, ignorePaste: true };
+  const data = assertOk(await deliver('Texte réellement inséré', { autoSend: false }));
+  assert.equal(data.insertedWith, 'execCommand', 'paste had no effect: the next strategy must run');
+  assert.equal(await editorText(), 'Texte réellement inséré');
+});

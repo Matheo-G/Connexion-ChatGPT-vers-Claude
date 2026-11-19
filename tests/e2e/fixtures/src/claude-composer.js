@@ -14,6 +14,8 @@
  *   draft        initial editor text
  *   brokenButton the send button ignores clicks (forces the Enter fallback)
  *   blockTyping  undo browser-generated typing (execCommand) → forces the DOM fallback
+ *   emailBanner  an email field (newsletter banner) shown before the editor mounts
+ *   staleAttachment  the composer already holds an attachment from an earlier draft
  */
 
 import { Editor, Extension } from '@tiptap/core';
@@ -114,4 +116,14 @@ function mount() {
   }
 }
 
-if (!cfg.noEditor) setTimeout(mount, cfg.mountDelay ?? 0);
+if (cfg.emailBanner) {
+  const banner = document.createElement('input');
+  Object.assign(banner, { type: 'email', placeholder: 'Recevoir la newsletter' });
+  document.body.prepend(banner);
+}
+if (!cfg.noEditor) {
+  setTimeout(() => {
+    mount();
+    if (cfg.staleAttachment) addAttachment('ancien texte collé '.repeat(300));
+  }, cfg.mountDelay ?? 0);
+}

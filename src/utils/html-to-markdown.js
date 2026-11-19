@@ -150,7 +150,7 @@ function detectLanguage(el) {
   return fromClass?.[1] ?? fromData ?? '';
 }
 
-function list(el, ctx, depth = 0) {
+function list(el, ctx) {
   const ordered = el.tagName === 'OL';
   let index = Number(el.getAttribute('start')) || 1;
   const items = [];

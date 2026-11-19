@@ -7,7 +7,6 @@
 export const StorageKey = Object.freeze({
   SETTINGS: 'settings', // chrome.storage.sync  – user preferences
   HISTORY: 'history', // chrome.storage.local – recent routing jobs
-  CURRENT_JOB: 'currentJob', // chrome.storage.session – survives SW restarts
   WORKFLOW_NOTES: 'workflowNotes', // chrome.storage.local – personal instructions per workflow
 });
 
@@ -54,13 +53,15 @@ export const Timeouts = Object.freeze({
   DELIVERY: 90_000,
   /**
    * How long a UI (button, popup) waits for the background's answer: an upper
-   * bound only — the background enforces the real (patience-scaled) timeouts.
+   * bound only — the background enforces the real timeouts. Must exceed the
+   * worst case: "slow connection" (×2) × 2 attempts (automatic retry) of
+   * tab load + handshake + submit, plus reading the source.
    */
-  CALLER: 200_000,
+  CALLER: 2 * 2 * (30_000 + 10_000 + 40_000) + 40_000,
 });
 
 /** Multiplier applied to waits, per `patience` setting. */
-export const PATIENCE_FACTOR = Object.freeze({ normal: 1, patient: 2 });
+const PATIENCE_FACTOR = Object.freeze({ normal: 1, patient: 2 });
 
 /**
  * Timeouts adapted to the user's patience setting.

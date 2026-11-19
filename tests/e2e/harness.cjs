@@ -16,6 +16,8 @@ const fs = require('node:fs');
 const { execSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '../..');
+/** Extension under test: the source tree, or e.g. the unzipped package (EXTENSION_DIR=…). */
+const EXTENSION = process.env.EXTENSION_DIR ? path.resolve(process.env.EXTENSION_DIR) : ROOT;
 const FIXTURES = path.join(__dirname, 'fixtures');
 const https = require('node:https');
 const HOSTS = ['claude.ai', 'chatgpt.com', 'chat.openai.com'];
@@ -137,8 +139,8 @@ async function launch() {
     channel: 'chromium',
     headless: !process.env.HEADED,
     args: [
-      `--disable-extensions-except=${ROOT}`,
-      `--load-extension=${ROOT}`,
+      `--disable-extensions-except=${EXTENSION}`,
+      `--load-extension=${EXTENSION}`,
       `--host-resolver-rules=${rules}, EXCLUDE localhost`,
       '--ignore-certificate-errors',
       '--no-proxy-server',

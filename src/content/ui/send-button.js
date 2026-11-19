@@ -29,8 +29,8 @@ button:focus-visible { box-shadow: var(--focus-ring); border-radius: var(--radiu
 .main { padding: 0 11px 0 9px; }
 .more { padding: 0 8px 0 6px; border-inline-start: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent); }
 .more[hidden] { display: none; }
-.badge { padding: 2px 6px; border-radius: var(--radius-full); font: 600 11px/1.2 var(--font-mono);
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.badge { padding: 1px 6px; border-radius: var(--radius-full); font: 600 11px/1.2 var(--font-mono);
+  background: var(--color-bg); border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent); }
 .badge[hidden] { display: none; }
 .icon { display: grid; place-items: center; width: 14px; height: 14px; }
 .spinner { width: 12px; height: 12px; border-radius: 50%; border: 2px solid currentColor;
@@ -72,7 +72,9 @@ export function createSendButton({ label, badge = null, title, menuTitle, workfl
   const more = root.querySelector('.more');
   let menu = null;
   main.title = title;
-  main.setAttribute('aria-label', title);
+  // The accessible name starts with the visible text ("Claude /figma") so voice
+  // control ("click Claude") works (WCAG 2.5.3), then adds the full description.
+  main.setAttribute('aria-label', `${[label, badge].filter(Boolean).join(' ')} — ${title}`);
   more.setAttribute('aria-label', menuTitle);
   more.hidden = workflows.length < 2;
 

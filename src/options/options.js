@@ -131,6 +131,7 @@ function renderChatGPTSetup() {
   const text = buildChatGPTInstructions();
   const textarea = el('textarea', 'textarea textarea--code');
   Object.assign(textarea, { id: 'chatgpt-instructions', readOnly: true, rows: 12, value: text });
+  textarea.setAttribute('aria-label', t('optChatGPTInstructionsLabel'));
 
   const copy = el('button', 'button button--primary', t('optChatGPTCopy'));
   copy.type = 'button';

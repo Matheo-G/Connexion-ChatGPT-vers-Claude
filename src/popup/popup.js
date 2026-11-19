@@ -40,7 +40,7 @@ function quickSend(button) {
     feedback: $('feedback'),
     type: MessageType.ROUTE_REQUEST,
     payload: { trigger: 'popup' },
-    onSuccess: () => t('quickSendDone', target.name),
+    onSuccess: (result) => t(result.sent ? 'quickSendDone' : 'toastInserted', target.name),
     onSettled: refresh,
   });
 }

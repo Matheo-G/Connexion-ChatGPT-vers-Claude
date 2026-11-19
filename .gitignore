@@ -4,3 +4,4 @@ node_modules/
 *.pem
 .DS_Store
 tests/e2e/fixtures/.build/
+dist/

@@ -17,7 +17,7 @@ const hosts = new Set();
 let themeObserver = null;
 
 /** `:root` selectors → `:host` selectors, so tokens apply inside a shadow root. */
-export function toHostSelectors(css) {
+function toHostSelectors(css) {
   return css
     .replaceAll(":root[data-theme='dark']", ":host([data-theme='dark'])")
     .replaceAll(":root:not([data-theme='light'])", ":host(:not([data-theme='light']))")
@@ -57,12 +57,27 @@ export function destroyShadowHost(host) {
   host.remove();
 }
 
-/** 'dark' | 'light' | null (null = let the OS preference decide). */
+/**
+ * 'dark' | 'light' | null. The page's declared theme (ChatGPT sets a class on
+ * <html>); otherwise inferred from the actual page background, so the button
+ * never uses dark colours on a light page because the OS is in dark mode.
+ */
 function pageTheme() {
   const { classList } = document.documentElement;
   if (classList.contains('dark')) return 'dark';
   if (classList.contains('light')) return 'light';
-  return null;
+  return themeFromBackground();
+}
+
+function themeFromBackground() {
+  for (const el of [document.body, document.documentElement]) {
+    const match = el && getComputedStyle(el).backgroundColor.match(/[\d.]+/g);
+    if (!match) continue;
+    const [r, g, b, alpha = 1] = match.map(Number);
+    if (alpha === 0) continue; // transparent: look further up
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 128 ? 'dark' : 'light';
+  }
+  return 'light'; // browsers paint a white canvas by default
 }
 
 function applyPageTheme(host) {

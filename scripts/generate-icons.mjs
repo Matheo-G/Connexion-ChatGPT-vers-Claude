@@ -42,6 +42,6 @@ for (const size of SIZES) {
   await page.setContent(tileHtml(size));
   const file = path.join(OUT_DIR, `icon-${size}.png`);
   await page.screenshot({ path: file, omitBackground: true });
-  console.log('✓', path.relative(ROOT, file));
+  console.info('✓', path.relative(ROOT, file));
 }
 await browser.close();

@@ -14,7 +14,8 @@
  * @property {string} turn        One exchange (prompt and/or answer).
  * @property {string[]} reply     One assistant answer block (ordered fallbacks).
  * @property {string[]} prompt    One user prompt block (ordered fallbacks).
- * @property {string} replyIdAttribute  Attribute holding the answer's id.
+ * @property {string[]} replyIdAttributes  Attributes holding the answer's id, by preference
+ *   (one per reply selector, so a fallback selector still yields an id).
  * @property {string[]} content   Rendered Markdown inside an answer; else the answer itself.
  */
 
@@ -26,7 +27,7 @@ export const LAYOUTS = Object.freeze([
     turn: '[data-turn-key]',
     reply: ['[data-chatgpt-selection-message-id]', '[data-content-search-unit-key$=":assistant"]'],
     prompt: ['[data-user-message-bubble="true"]', '[data-content-search-unit-key$=":user"]'],
-    replyIdAttribute: 'data-chatgpt-selection-message-id',
+    replyIdAttributes: ['data-chatgpt-selection-message-id', 'data-chatgpt-search-message-ids'],
     content: ['[data-markdown-text-style="assistant-message"]', '.markdown', '.prose'],
   },
   {
@@ -35,7 +36,7 @@ export const LAYOUTS = Object.freeze([
     turn: '[data-testid^="conversation-turn-"]',
     reply: ['[data-message-author-role="assistant"]'],
     prompt: ['[data-message-author-role="user"]'],
-    replyIdAttribute: 'data-message-id',
+    replyIdAttributes: ['data-message-id'],
     content: ['.markdown', '.prose', '[class*="markdown"]'],
   },
 ]);

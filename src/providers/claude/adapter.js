@@ -16,7 +16,6 @@ export function createAdapter({ log }) {
     describe: () => ({ path: location.pathname, ...health() }),
     handlers: {
       [MessageType.TARGET_SUBMIT]: (payload) => submit(payload, { log }),
-      [MessageType.TARGET_HEALTH]: () => health(),
       [MessageType.PROVIDER_DIAGNOSE]: () => snapshot(),
     },
     destroy() {},
